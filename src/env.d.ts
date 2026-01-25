@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly GITHUB_OWNER: string;
   readonly GITHUB_REPO: string;
   readonly GITHUB_BRANCH: string;
+  readonly TURNSTILE_SITE_KEY: string;
+  readonly TURNSTILE_SECRET_KEY: string;
 }
 
 interface ImportMeta {

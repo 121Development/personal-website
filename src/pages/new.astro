@@ -4,15 +4,27 @@ import Layout from '../layouts/Layout.astro';
 import { fetchAllTags } from '../lib/content';
 
 const allTags = await fetchAllTags();
+
+// Get Turnstile site key from environment
+const runtime = (Astro.locals as any).runtime;
+const cfEnv = runtime?.env || {};
+const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE_SITE_KEY || '';
 ---
 
 <Layout title="New Post - 121Eliasson">
   <h1>New Blog Post</h1>
 
-  <form id="postForm" class="post-form">
+  <form id="postForm" class="post-form" data-turnstile-key={TURNSTILE_SITE_KEY}>
     <div class="form-group">
       <label for="password">Password</label>
       <input type="password" id="password" name="password" required autocomplete="current-password" />
+      <p class="hint" id="attemptsHint"></p>
+    </div>
+
+    <!-- CAPTCHA container (hidden by default, shown after 2 failed attempts) -->
+    <div class="form-group captcha-container" id="captchaContainer" style="display: none;">
+      <label>Verify you're human</label>
+      <div id="turnstile-widget"></div>
     </div>
 
     <div class="form-group">
@@ -233,7 +245,22 @@ const allTags = await fetchAllTags();
   .status.loading {
     color: var(--text-muted);
   }
+
+  .captcha-container {
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  #attemptsHint {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
 </style>
+
+<!-- Turnstile CAPTCHA script -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
 <script is:inline>
   const form = document.getElementById('postForm');
@@ -244,8 +271,13 @@ const allTags = await fetchAllTags();
   const addTagBtn = document.getElementById('addTagBtn');
   const newTagInput = document.getElementById('newTag');
   const tagsContainer = document.querySelector('.tags-container');
+  const captchaContainer = document.getElementById('captchaContainer');
+  const attemptsHint = document.getElementById('attemptsHint');
 
   let processedImage = null;
+  let captchaRequired = false;
+  let turnstileWidgetId = null;
+  const turnstileSiteKey = form.dataset.turnstileKey;
 
   // Add new tag
   addTagBtn.addEventListener('click', () => {
@@ -268,6 +300,34 @@ const allTags = await fetchAllTags();
       addTagBtn.click();
     }
   });
+
+  // Show CAPTCHA widget
+  function showCaptcha() {
+    if (!turnstileSiteKey) {
+      console.warn('Turnstile site key not configured');
+      return;
+    }
+    captchaContainer.style.display = 'block';
+    captchaRequired = true;
+
+    // Render Turnstile widget if not already rendered
+    if (!turnstileWidgetId && window.turnstile) {
+      turnstileWidgetId = window.turnstile.render('#turnstile-widget', {
+        sitekey: turnstileSiteKey,
+        callback: function(token) {
+          console.log('CAPTCHA verified');
+        },
+      });
+    } else if (window.turnstile && turnstileWidgetId) {
+      window.turnstile.reset(turnstileWidgetId);
+    }
+  }
+
+  // Get CAPTCHA token
+  function getCaptchaToken() {
+    if (!captchaRequired || !window.turnstile) return null;
+    return window.turnstile.getResponse(turnstileWidgetId);
+  }
 
   // Image processing
   imageInput.addEventListener('change', async (e) => {
@@ -376,12 +436,20 @@ const allTags = await fetchAllTags();
       return;
     }
 
+    // Check CAPTCHA if required
+    const captchaToken = getCaptchaToken();
+    if (captchaRequired && !captchaToken) {
+      status.textContent = 'Please complete the CAPTCHA';
+      status.className = 'status error';
+      return;
+    }
+
     submitBtn.disabled = true;
     status.textContent = 'Creating post...';
     status.className = 'status loading';
 
     try {
-      const response = await fetchWithRetry('/api/new-post', {
+      const response = await fetch('/api/new-post', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -392,6 +460,7 @@ const allTags = await fetchAllTags();
           content,
           tags: selectedTags,
           featured,
+          captchaToken,
           image: processedImage ? {
             base64: processedImage.base64,
             format: processedImage.format
@@ -405,17 +474,45 @@ const allTags = await fetchAllTags();
         status.textContent = 'Post created! Rebuilding site... (takes ~2 min)';
         status.className = 'status success';
 
-        // Clear form
+        // Clear form and reset CAPTCHA state
         form.reset();
         imagePreview.innerHTML = '';
         processedImage = null;
+        captchaRequired = false;
+        captchaContainer.style.display = 'none';
+        attemptsHint.textContent = '';
 
         // Show link to new post
         if (result.slug) {
           status.innerHTML += `<br><a href="/blog/${result.slug}">View post</a> (after rebuild)`;
         }
       } else {
-        throw new Error(result.error || 'Failed to create post');
+        // Handle different error cases
+        if (result.locked) {
+          const minutes = Math.ceil(result.retryAfter / 60);
+          status.textContent = `Locked out for ${minutes} minute(s). Too many failed attempts.`;
+          status.className = 'status error';
+        } else if (result.requiresCaptcha) {
+          showCaptcha();
+          if (result.attemptsRemaining !== undefined) {
+            attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining before lockout`;
+            attemptsHint.style.color = '#e53935';
+          }
+          status.textContent = result.error || 'Please complete the CAPTCHA';
+          status.className = 'status error';
+        } else {
+          if (result.attemptsRemaining !== undefined) {
+            attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining`;
+            attemptsHint.style.color = result.attemptsRemaining <= 1 ? '#e53935' : 'var(--text-muted)';
+          }
+          status.textContent = result.error || 'Failed to create post';
+          status.className = 'status error';
+        }
+
+        // Reset CAPTCHA for retry
+        if (window.turnstile && turnstileWidgetId) {
+          window.turnstile.reset(turnstileWidgetId);
+        }
       }
     } catch (err) {
       status.textContent = 'Error: ' + err.message;
@@ -424,34 +521,4 @@ const allTags = await fetchAllTags();
       submitBtn.disabled = false;
     }
   });
-
-  // Fetch with exponential backoff retry for rate limits
-  async function fetchWithRetry(url, options, maxRetries = 3) {
-    let lastError;
-
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        const response = await fetch(url, options);
-
-        // If rate limited, wait and retry
-        if (response.status === 429) {
-          const retryAfter = response.headers.get('Retry-After') || Math.pow(2, i + 1);
-          status.textContent = `Rate limited. Retrying in ${retryAfter}s...`;
-          await new Promise(r => setTimeout(r, retryAfter * 1000));
-          continue;
-        }
-
-        return response;
-      } catch (err) {
-        lastError = err;
-        if (i < maxRetries - 1) {
-          const delay = Math.pow(2, i + 1) * 1000;
-          status.textContent = `Network error. Retrying in ${delay/1000}s...`;
-          await new Promise(r => setTimeout(r, delay));
-        }
-      }
-    }
-
-    throw lastError || new Error('Max retries exceeded');
-  }
 </script>

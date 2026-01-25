@@ -13,27 +13,99 @@ function stringToBase64(str: string): string {
   return btoa(binary);
 }
 
-// Simple in-memory rate limiting (resets on cold start)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 5; // 5 requests per minute
+// Brute force protection (in-memory, resets on cold start)
+const failedAttempts = new Map<string, { count: number; lockedUntil: number }>();
+const MAX_ATTEMPTS = 3;
+const LOCKOUT_DURATION = 60 * 60 * 1000; // 1 hour
+const CAPTCHA_THRESHOLD = 2; // Show CAPTCHA after 2 failed attempts
 
-function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
+interface AuthCheck {
+  allowed: boolean;
+  locked: boolean;
+  requiresCaptcha: boolean;
+  retryAfter?: number;
+  failedCount: number;
+}
+
+function checkBruteForce(ip: string): AuthCheck {
   const now = Date.now();
-  const record = rateLimitMap.get(ip);
+  const record = failedAttempts.get(ip);
 
-  if (!record || now > record.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return { allowed: true };
+  // No record = first attempt
+  if (!record) {
+    return { allowed: true, locked: false, requiresCaptcha: false, failedCount: 0 };
   }
 
-  if (record.count >= MAX_REQUESTS) {
-    const retryAfter = Math.ceil((record.resetAt - now) / 1000);
-    return { allowed: false, retryAfter };
+  // Check if locked out
+  if (record.lockedUntil > now) {
+    const retryAfter = Math.ceil((record.lockedUntil - now) / 1000);
+    return {
+      allowed: false,
+      locked: true,
+      requiresCaptcha: true,
+      retryAfter,
+      failedCount: record.count
+    };
   }
+
+  // Lockout expired, reset
+  if (record.lockedUntil > 0 && record.lockedUntil <= now) {
+    failedAttempts.delete(ip);
+    return { allowed: true, locked: false, requiresCaptcha: false, failedCount: 0 };
+  }
+
+  // Check if CAPTCHA required (2+ failed attempts)
+  const requiresCaptcha = record.count >= CAPTCHA_THRESHOLD;
+
+  return {
+    allowed: true,
+    locked: false,
+    requiresCaptcha,
+    failedCount: record.count
+  };
+}
+
+function recordFailedAttempt(ip: string): { locked: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const record = failedAttempts.get(ip) || { count: 0, lockedUntil: 0 };
 
   record.count++;
-  return { allowed: true };
+
+  // Lock out after MAX_ATTEMPTS
+  if (record.count >= MAX_ATTEMPTS) {
+    record.lockedUntil = now + LOCKOUT_DURATION;
+    failedAttempts.set(ip, record);
+    return { locked: true, retryAfter: Math.ceil(LOCKOUT_DURATION / 1000) };
+  }
+
+  failedAttempts.set(ip, record);
+  return { locked: false };
+}
+
+function clearFailedAttempts(ip: string): void {
+  failedAttempts.delete(ip);
+}
+
+// Verify Cloudflare Turnstile CAPTCHA
+async function verifyCaptcha(token: string, secretKey: string, ip: string): Promise<boolean> {
+  if (!token || !secretKey) return false;
+
+  try {
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        secret: secretKey,
+        response: token,
+        remoteip: ip,
+      }),
+    });
+
+    const result = await response.json() as { success: boolean };
+    return result.success;
+  } catch {
+    return false;
+  }
 }
 
 // GitHub API helper with retry logic
@@ -72,18 +144,23 @@ function generateSlug(title: string): string {
 }
 
 export const POST: APIRoute = async ({ request, clientAddress, locals }) => {
-  // Rate limiting
   const ip = clientAddress || 'unknown';
-  const rateLimit = checkRateLimit(ip);
 
-  if (!rateLimit.allowed) {
+  // Check brute force protection
+  const authCheck = checkBruteForce(ip);
+
+  if (authCheck.locked) {
     return new Response(
-      JSON.stringify({ error: 'Rate limit exceeded' }),
+      JSON.stringify({
+        error: 'Too many failed attempts. Try again later.',
+        locked: true,
+        retryAfter: authCheck.retryAfter
+      }),
       {
         status: 429,
         headers: {
           'Content-Type': 'application/json',
-          'Retry-After': String(rateLimit.retryAfter),
+          'Retry-After': String(authCheck.retryAfter),
         },
       }
     );
@@ -91,7 +168,7 @@ export const POST: APIRoute = async ({ request, clientAddress, locals }) => {
 
   try {
     const body = await request.json();
-    const { password, title, content, tags, featured, image } = body;
+    const { password, title, content, tags, featured, image, captchaToken } = body;
 
     // Get environment variables from Cloudflare runtime
     const runtime = (locals as any).runtime;
@@ -103,14 +180,55 @@ export const POST: APIRoute = async ({ request, clientAddress, locals }) => {
     const GITHUB_OWNER = cfEnv.GITHUB_OWNER || import.meta.env.GITHUB_OWNER;
     const GITHUB_REPO = cfEnv.GITHUB_REPO || import.meta.env.GITHUB_REPO;
     const GITHUB_BRANCH = cfEnv.GITHUB_BRANCH || import.meta.env.GITHUB_BRANCH || 'master';
+    const TURNSTILE_SECRET = cfEnv.TURNSTILE_SECRET_KEY || import.meta.env.TURNSTILE_SECRET_KEY;
+
+    // If CAPTCHA is required (2+ failed attempts), verify it
+    if (authCheck.requiresCaptcha) {
+      if (!captchaToken) {
+        return new Response(
+          JSON.stringify({
+            error: 'CAPTCHA required',
+            requiresCaptcha: true,
+            failedAttempts: authCheck.failedCount
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const captchaValid = await verifyCaptcha(captchaToken, TURNSTILE_SECRET, ip);
+      if (!captchaValid) {
+        return new Response(
+          JSON.stringify({
+            error: 'CAPTCHA verification failed',
+            requiresCaptcha: true
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
     // Validate password
     if (!ADMIN_PASSWORD || password !== ADMIN_PASSWORD) {
+      const lockResult = recordFailedAttempt(ip);
+      const failedRecord = failedAttempts.get(ip);
+
       return new Response(
-        JSON.stringify({ error: 'Invalid password' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error: 'Invalid password',
+          locked: lockResult.locked,
+          retryAfter: lockResult.retryAfter,
+          requiresCaptcha: (failedRecord?.count || 0) >= CAPTCHA_THRESHOLD,
+          attemptsRemaining: MAX_ATTEMPTS - (failedRecord?.count || 0)
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
     }
+
+    // Password correct - clear failed attempts
+    clearFailedAttempts(ip);
 
     // Validate required fields
     if (!title || !content) {
