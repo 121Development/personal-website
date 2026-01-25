@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { fetchContentSection } from '../lib/content';
+
+const about = await fetchContentSection('about.md');
+---
+
+<Layout title="About - Erik's Homepage">
+  {about ? (
+    <div class="content" set:html={about.content} />
+  ) : (
+    <div>
+      <h1>About</h1>
+      <p>Content not available. Please add an about.md file to your content repository.</p>
+    </div>
+  )}
+</Layout>

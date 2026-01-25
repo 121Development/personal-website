@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { fetchContentSection } from '../lib/content';
+
+const contact = await fetchContentSection('contact.md');
+---
+
+<Layout title="Contact - Erik's Homepage">
+  {contact ? (
+    <div class="content" set:html={contact.content} />
+  ) : (
+    <div>
+      <h1>Contact</h1>
+      <p>Content not available. Please add a contact.md file to your content repository.</p>
+    </div>
+  )}
+</Layout>

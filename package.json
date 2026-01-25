@@ -1,0 +1,19 @@
+{
+  "name": "homepage",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "astro build && wrangler deploy"
+  },
+  "dependencies": {
+    "astro": "^4.16.18",
+    "@astrojs/cloudflare": "^11.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "wrangler": "^3.95.0"
+  }
+}

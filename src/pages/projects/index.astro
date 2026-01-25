@@ -1,0 +1,23 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { fetchProjects } from '../../lib/content';
+
+const projects = await fetchProjects();
+---
+
+<Layout title="Projects - Erik's Homepage">
+  <h1>Projects</h1>
+  
+  {projects.length > 0 ? (
+    <div>
+      {projects.map((project) => (
+        <div class="post-item">
+          <h2>{project.name}</h2>
+          <div class="content" set:html={project.content} />
+        </div>
+      ))}
+    </div>
+  ) : (
+    <p>No projects found. Add markdown files to the projects/ directory in your content repository.</p>
+  )}
+</Layout>

@@ -1,0 +1,32 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { fetchBlogPost, fetchBlogPosts } from '../../lib/content';
+
+export async function getStaticPaths() {
+  const posts = await fetchBlogPosts();
+  
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post }
+  }));
+}
+
+const { slug } = Astro.params;
+const { post } = Astro.props;
+
+if (!post) {
+  return Astro.redirect('/blog');
+}
+---
+
+<Layout title={`${post.title} - Blog`} description={post.excerpt}>
+  <article>
+    <div class="post-date">{post.date}</div>
+    <h1>{post.title}</h1>
+    <div class="content" set:html={post.content} />
+  </article>
+  
+  <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee;">
+    <a href="/blog">← Back to blog</a>
+  </div>
+</Layout>

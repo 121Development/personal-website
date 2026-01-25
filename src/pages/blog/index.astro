@@ -1,0 +1,28 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { fetchBlogPosts } from '../../lib/content';
+
+const posts = await fetchBlogPosts();
+---
+
+<Layout title="Blog - Erik's Homepage">
+  <h1>Blog</h1>
+  
+  {posts.length > 0 ? (
+    <ul class="post-list">
+      {posts.map((post) => (
+        <li class="post-item">
+          <div class="post-date">{post.date}</div>
+          <h2 class="post-title">
+            <a href={`/blog/${post.slug}`}>{post.title}</a>
+          </h2>
+          {post.excerpt && (
+            <p class="post-excerpt">{post.excerpt}</p>
+          )}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p>No blog posts found. Add markdown files to the blog/ directory in your content repository.</p>
+  )}
+</Layout>

@@ -1,0 +1,9 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Erik's Portfolio",
+  "name_for_model": "erik_portfolio",
+  "description_for_human": "Security expert, blockchain developer, and system architect",
+  "description_for_model": "Access Erik's CV, projects, blog posts about security, blockchain, and software architecture. View professional experience, current projects, and technical writing.",
+  "contact_email": "your-email@example.com",
+  "legal_info_url": "https://yoursite.com/legal"
+}
