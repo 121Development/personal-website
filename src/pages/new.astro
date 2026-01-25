@@ -1,0 +1,457 @@
+---
+export const prerender = false;
+import Layout from '../layouts/Layout.astro';
+import { fetchAllTags } from '../lib/content';
+
+const allTags = await fetchAllTags();
+---
+
+<Layout title="New Post - 121Eliasson">
+  <h1>New Blog Post</h1>
+
+  <form id="postForm" class="post-form">
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required autocomplete="current-password" />
+    </div>
+
+    <div class="form-group">
+      <label for="title">Title</label>
+      <input type="text" id="title" name="title" required placeholder="My Awesome Post" />
+    </div>
+
+    <div class="form-group">
+      <label>Tags</label>
+      <div class="tags-container">
+        {allTags.map((tag) => (
+          <label class="tag-checkbox">
+            <input type="checkbox" name="tags" value={tag} />
+            <span>{tag}</span>
+          </label>
+        ))}
+        <div class="new-tag-input">
+          <input type="text" id="newTag" placeholder="New tag..." />
+          <button type="button" id="addTagBtn">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="image">Featured Image (optional)</label>
+      <input type="file" id="image" name="image" accept="image/png,image/jpeg,image/jpg" />
+      <p class="hint">Will be resized to max 1024px and converted to WebP</p>
+      <div id="imagePreview" class="image-preview"></div>
+    </div>
+
+    <div class="form-group">
+      <label for="featured">
+        <input type="checkbox" id="featured" name="featured" />
+        Featured post (show on homepage)
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label for="content">Content (Markdown)</label>
+      <textarea id="content" name="content" rows="20" required placeholder="Write your post content in Markdown..."></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" id="submitBtn">Create Post</button>
+      <div id="status" class="status"></div>
+    </div>
+  </form>
+</Layout>
+
+<style>
+  .post-form {
+    max-width: 100%;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="password"],
+  .form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color var(--transition);
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 300px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .tag-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.8rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-weight: normal;
+  }
+
+  .tag-checkbox:has(input:checked) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .tag-checkbox input {
+    display: none;
+  }
+
+  .new-tag-input {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .new-tag-input input {
+    width: 120px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .new-tag-input button {
+    padding: 0.4rem 0.8rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .image-preview {
+    margin-top: 1rem;
+  }
+
+  .image-preview img {
+    max-width: 300px;
+    max-height: 200px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .form-group input[type="file"] {
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 0.5rem;
+  }
+
+  .form-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  #submitBtn {
+    padding: 0.75rem 2rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  #submitBtn:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  #submitBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .status {
+    font-size: 0.95rem;
+  }
+
+  .status.error {
+    color: #e53935;
+  }
+
+  .status.success {
+    color: #43a047;
+  }
+
+  .status.loading {
+    color: var(--text-muted);
+  }
+</style>
+
+<script is:inline>
+  const form = document.getElementById('postForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const status = document.getElementById('status');
+  const imageInput = document.getElementById('image');
+  const imagePreview = document.getElementById('imagePreview');
+  const addTagBtn = document.getElementById('addTagBtn');
+  const newTagInput = document.getElementById('newTag');
+  const tagsContainer = document.querySelector('.tags-container');
+
+  let processedImage = null;
+
+  // Add new tag
+  addTagBtn.addEventListener('click', () => {
+    const tagValue = newTagInput.value.trim().toLowerCase();
+    if (tagValue && !document.querySelector(`input[value="${tagValue}"]`)) {
+      const label = document.createElement('label');
+      label.className = 'tag-checkbox';
+      label.innerHTML = `
+        <input type="checkbox" name="tags" value="${tagValue}" checked />
+        <span>${tagValue}</span>
+      `;
+      tagsContainer.insertBefore(label, document.querySelector('.new-tag-input'));
+      newTagInput.value = '';
+    }
+  });
+
+  newTagInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTagBtn.click();
+    }
+  });
+
+  // Image processing
+  imageInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      processedImage = null;
+      imagePreview.innerHTML = '';
+      return;
+    }
+
+    status.textContent = 'Processing image...';
+    status.className = 'status loading';
+
+    try {
+      processedImage = await processImage(file);
+
+      // Show preview
+      imagePreview.innerHTML = `<img src="${processedImage.dataUrl}" alt="Preview" />`;
+      status.textContent = `Image processed: ${processedImage.width}x${processedImage.height}, ${Math.round(processedImage.size / 1024)}KB`;
+      status.className = 'status success';
+    } catch (err) {
+      status.textContent = 'Error processing image: ' + err.message;
+      status.className = 'status error';
+      processedImage = null;
+    }
+  });
+
+  async function processImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.src = e.target.result;
+      };
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Calculate new dimensions (max 1024px width)
+        let width = img.width;
+        let height = img.height;
+        const maxWidth = 1024;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and convert
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Try WebP first, fall back to JPEG
+        let dataUrl = canvas.toDataURL('image/webp', 0.85);
+        let format = 'webp';
+
+        // Check if WebP is supported
+        if (dataUrl.startsWith('data:image/webp')) {
+          // WebP supported
+        } else {
+          // Fall back to JPEG
+          dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          format = 'jpg';
+        }
+
+        // Calculate size
+        const base64 = dataUrl.split(',')[1];
+        const size = Math.round((base64.length * 3) / 4);
+
+        resolve({
+          dataUrl,
+          base64,
+          format,
+          width,
+          height,
+          size
+        });
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      reader.onerror = () => reject(new Error('Failed to read file'));
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const password = document.getElementById('password').value;
+    const title = document.getElementById('title').value;
+    const content = document.getElementById('content').value;
+    const featured = document.getElementById('featured').checked;
+
+    const selectedTags = Array.from(document.querySelectorAll('input[name="tags"]:checked'))
+      .map(cb => cb.value);
+
+    if (!password || !title || !content) {
+      status.textContent = 'Please fill in all required fields';
+      status.className = 'status error';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    status.textContent = 'Creating post...';
+    status.className = 'status loading';
+
+    try {
+      const response = await fetchWithRetry('/api/new-post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password,
+          title,
+          content,
+          tags: selectedTags,
+          featured,
+          image: processedImage ? {
+            base64: processedImage.base64,
+            format: processedImage.format
+          } : null
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        status.textContent = 'Post created! Rebuilding site... (takes ~2 min)';
+        status.className = 'status success';
+
+        // Clear form
+        form.reset();
+        imagePreview.innerHTML = '';
+        processedImage = null;
+
+        // Show link to new post
+        if (result.slug) {
+          status.innerHTML += `<br><a href="/blog/${result.slug}">View post</a> (after rebuild)`;
+        }
+      } else {
+        throw new Error(result.error || 'Failed to create post');
+      }
+    } catch (err) {
+      status.textContent = 'Error: ' + err.message;
+      status.className = 'status error';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  // Fetch with exponential backoff retry for rate limits
+  async function fetchWithRetry(url, options, maxRetries = 3) {
+    let lastError;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const response = await fetch(url, options);
+
+        // If rate limited, wait and retry
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After') || Math.pow(2, i + 1);
+          status.textContent = `Rate limited. Retrying in ${retryAfter}s...`;
+          await new Promise(r => setTimeout(r, retryAfter * 1000));
+          continue;
+        }
+
+        return response;
+      } catch (err) {
+        lastError = err;
+        if (i < maxRetries - 1) {
+          const delay = Math.pow(2, i + 1) * 1000;
+          status.textContent = `Network error. Retrying in ${delay/1000}s...`;
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
+    }
+
+    throw lastError || new Error('Max retries exceeded');
+  }
+</script>

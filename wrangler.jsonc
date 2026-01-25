@@ -1,7 +1,17 @@
 {
   "name": "121eliasson-com",
   "compatibility_date": "2025-01-25",
+  "main": "./dist/_worker.js/index.js",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  // Environment variables - set these in Cloudflare dashboard as secrets:
+  // ADMIN_PASSWORD - password to access /new
+  // GITHUB_TOKEN - GitHub Personal Access Token with repo write access
+  // GITHUB_OWNER - GitHub username (e.g., "121eliasson")
+  // GITHUB_REPO - Repository name (e.g., "personal-blog")
+  "vars": {
+    "GITHUB_BRANCH": "master"
   }
 }
