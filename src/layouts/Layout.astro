@@ -351,11 +351,11 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
       font-style: italic;
     }
 
-    .content :global(img),
-    article :global(img),
-    main :global(img) {
+    .content img,
+    article img,
+    main img {
       max-width: 100% !important;
-      width: 100%;
+      width: auto;
       height: auto !important;
       border-radius: 8px;
       margin: 1.5rem 0;
