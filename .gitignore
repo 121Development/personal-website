@@ -38,3 +38,6 @@ coverage/
 # Misc
 *.local
 scratchpad.md
+
+# Data exports (may contain PII)
+*.ghost.*.json
