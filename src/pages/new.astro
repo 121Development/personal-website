@@ -4,27 +4,16 @@ import Layout from '../layouts/Layout.astro';
 import { fetchAllTags } from '../lib/content';
 
 const allTags = await fetchAllTags();
-
-// Get Turnstile site key from environment
-const runtime = (Astro.locals as any).runtime;
-const cfEnv = runtime?.env || {};
-const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE_SITE_KEY || '';
 ---
 
 <Layout title="New Post - 121Eliasson">
   <h1>New Blog Post</h1>
 
-  <form id="postForm" class="post-form" data-turnstile-key={TURNSTILE_SITE_KEY}>
+  <form id="postForm" class="post-form">
     <div class="form-group">
       <label for="password">Password</label>
       <input type="password" id="password" name="password" required autocomplete="current-password" />
       <p class="hint" id="attemptsHint"></p>
-    </div>
-
-    <!-- CAPTCHA container (hidden by default, shown after 2 failed attempts) -->
-    <div class="form-group captcha-container" id="captchaContainer" style="display: none;">
-      <label>Verify you're human</label>
-      <div id="turnstile-widget"></div>
     </div>
 
     <div class="form-group">
@@ -246,21 +235,11 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
     color: var(--text-muted);
   }
 
-  .captcha-container {
-    padding: 1rem;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-
   #attemptsHint {
     font-size: 0.85rem;
     margin-top: 0.5rem;
   }
 </style>
-
-<!-- Turnstile CAPTCHA script -->
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
 <script is:inline>
   const form = document.getElementById('postForm');
@@ -271,15 +250,11 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
   const addTagBtn = document.getElementById('addTagBtn');
   const newTagInput = document.getElementById('newTag');
   const tagsContainer = document.querySelector('.tags-container');
-  const captchaContainer = document.getElementById('captchaContainer');
   const attemptsHint = document.getElementById('attemptsHint');
 
   let processedImage = null;
-  let captchaRequired = false;
-  let turnstileWidgetId = null;
-  const turnstileSiteKey = form.dataset.turnstileKey;
 
-  // Sanitize tag input - only allow alphanumeric, hyphens, underscores
+  // Sanitize tag input
   function sanitizeTag(tag) {
     return tag.replace(/[^a-z0-9\-_]/g, '');
   }
@@ -311,34 +286,6 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
     }
   });
 
-  // Show CAPTCHA widget
-  function showCaptcha() {
-    if (!turnstileSiteKey) {
-      console.warn('Turnstile site key not configured');
-      return;
-    }
-    captchaContainer.style.display = 'block';
-    captchaRequired = true;
-
-    // Render Turnstile widget if not already rendered
-    if (!turnstileWidgetId && window.turnstile) {
-      turnstileWidgetId = window.turnstile.render('#turnstile-widget', {
-        sitekey: turnstileSiteKey,
-        callback: function(token) {
-          console.log('CAPTCHA verified');
-        },
-      });
-    } else if (window.turnstile && turnstileWidgetId) {
-      window.turnstile.reset(turnstileWidgetId);
-    }
-  }
-
-  // Get CAPTCHA token
-  function getCaptchaToken() {
-    if (!captchaRequired || !window.turnstile) return null;
-    return window.turnstile.getResponse(turnstileWidgetId);
-  }
-
   // Image processing
   imageInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -353,8 +300,6 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
 
     try {
       processedImage = await processImage(file);
-
-      // Show preview
       imagePreview.innerHTML = `<img src="${processedImage.dataUrl}" alt="Preview" />`;
       status.textContent = `Image processed: ${processedImage.width}x${processedImage.height}, ${Math.round(processedImage.size / 1024)}KB`;
       status.className = 'status success';
@@ -370,15 +315,11 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
       const img = new Image();
       const reader = new FileReader();
 
-      reader.onload = (e) => {
-        img.src = e.target.result;
-      };
+      reader.onload = (e) => { img.src = e.target.result; };
 
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-
-        // Calculate new dimensions (max 1024px width)
         let width = img.width;
         let height = img.height;
         const maxWidth = 1024;
@@ -390,40 +331,24 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
 
         canvas.width = width;
         canvas.height = height;
-
-        // Draw and convert
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Try WebP first, fall back to JPEG
         let dataUrl = canvas.toDataURL('image/webp', 0.85);
         let format = 'webp';
 
-        // Check if WebP is supported
-        if (dataUrl.startsWith('data:image/webp')) {
-          // WebP supported
-        } else {
-          // Fall back to JPEG
+        if (!dataUrl.startsWith('data:image/webp')) {
           dataUrl = canvas.toDataURL('image/jpeg', 0.85);
           format = 'jpg';
         }
 
-        // Calculate size
         const base64 = dataUrl.split(',')[1];
         const size = Math.round((base64.length * 3) / 4);
 
-        resolve({
-          dataUrl,
-          base64,
-          format,
-          width,
-          height,
-          size
-        });
+        resolve({ dataUrl, base64, format, width, height, size });
       };
 
       img.onerror = () => reject(new Error('Failed to load image'));
       reader.onerror = () => reject(new Error('Failed to read file'));
-
       reader.readAsDataURL(file);
     });
   }
@@ -446,14 +371,6 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
       return;
     }
 
-    // Check CAPTCHA if required
-    const captchaToken = getCaptchaToken();
-    if (captchaRequired && !captchaToken) {
-      status.textContent = 'Please complete the CAPTCHA';
-      status.className = 'status error';
-      return;
-    }
-
     submitBtn.disabled = true;
     status.textContent = 'Creating post...';
     status.className = 'status loading';
@@ -461,68 +378,37 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
     try {
       const response = await fetch('/api/new-post', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           password,
           title,
           content,
           tags: selectedTags,
           featured,
-          captchaToken,
-          image: processedImage ? {
-            base64: processedImage.base64,
-            format: processedImage.format
-          } : null
+          image: processedImage ? { base64: processedImage.base64, format: processedImage.format } : null
         })
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        status.textContent = 'Post created! Rebuilding site... (takes ~2 min)';
+        status.textContent = 'Post created! Rebuilding site...';
         status.className = 'status success';
-
-        // Clear form and reset CAPTCHA state
         form.reset();
         imagePreview.innerHTML = '';
         processedImage = null;
-        captchaRequired = false;
-        captchaContainer.style.display = 'none';
         attemptsHint.textContent = '';
 
-        // Show link to new post
         if (result.slug) {
           status.innerHTML += `<br><a href="/blog/${result.slug}">View post</a> (after rebuild)`;
         }
       } else {
-        // Handle different error cases
-        if (result.locked) {
-          const minutes = Math.ceil(result.retryAfter / 60);
-          status.textContent = `Locked out for ${minutes} minute(s). Too many failed attempts.`;
-          status.className = 'status error';
-        } else if (result.requiresCaptcha) {
-          showCaptcha();
-          if (result.attemptsRemaining !== undefined) {
-            attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining before lockout`;
-            attemptsHint.style.color = '#e53935';
-          }
-          status.textContent = result.error || 'Please complete the CAPTCHA';
-          status.className = 'status error';
-        } else {
-          if (result.attemptsRemaining !== undefined) {
-            attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining`;
-            attemptsHint.style.color = result.attemptsRemaining <= 1 ? '#e53935' : 'var(--text-muted)';
-          }
-          status.textContent = result.error || 'Failed to create post';
-          status.className = 'status error';
+        if (result.attemptsRemaining !== undefined) {
+          attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining`;
+          attemptsHint.style.color = '#e53935';
         }
-
-        // Reset CAPTCHA for retry
-        if (window.turnstile && turnstileWidgetId) {
-          window.turnstile.reset(turnstileWidgetId);
-        }
+        status.textContent = result.error || 'Failed to create post';
+        status.className = 'status error';
       }
     } catch (err) {
       status.textContent = 'Error: ' + err.message;

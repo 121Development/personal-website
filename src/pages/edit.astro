@@ -6,11 +6,6 @@ import { fetchBlogPost, fetchAllTags } from '../lib/content';
 const slug = Astro.url.searchParams.get('slug');
 const post = slug ? await fetchBlogPost(slug) : null;
 const allTags = await fetchAllTags();
-
-// Get Turnstile site key from environment
-const runtime = (Astro.locals as any).runtime;
-const cfEnv = runtime?.env || {};
-const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE_SITE_KEY || '';
 ---
 
 <Layout title={post ? `Edit: ${post.title}` : 'Edit Post - 121Eliasson'}>
@@ -25,17 +20,11 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
   )}
 
   {post && (
-    <form id="editForm" class="post-form" data-turnstile-key={TURNSTILE_SITE_KEY} data-slug={slug}>
+    <form id="editForm" class="post-form" data-slug={slug}>
       <div class="form-group">
         <label for="password">Password</label>
         <input type="password" id="password" name="password" required autocomplete="current-password" />
         <p class="hint" id="attemptsHint"></p>
-      </div>
-
-      <!-- CAPTCHA container (hidden by default) -->
-      <div class="form-group captcha-container" id="captchaContainer" style="display: none;">
-        <label>Verify you're human</label>
-        <div id="turnstile-widget"></div>
       </div>
 
       <div class="form-group">
@@ -48,12 +37,7 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
         <div class="tags-container">
           {allTags.map((tag) => (
             <label class="tag-checkbox">
-              <input
-                type="checkbox"
-                name="tags"
-                value={tag}
-                checked={post.tags?.includes(tag)}
-              />
+              <input type="checkbox" name="tags" value={tag} checked={post.tags?.includes(tag)} />
               <span>{tag}</span>
             </label>
           ))}
@@ -73,7 +57,7 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
           </div>
         )}
         <input type="file" id="image" name="image" accept="image/png,image/jpeg,image/jpg" />
-        <p class="hint">Leave empty to keep current image. New image will be resized to max 1024px.</p>
+        <p class="hint">Leave empty to keep current image.</p>
         <div id="imagePreview" class="image-preview"></div>
       </div>
 
@@ -306,21 +290,11 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
     color: var(--text-muted);
   }
 
-  .captcha-container {
-    padding: 1rem;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-
   #attemptsHint {
     font-size: 0.85rem;
     margin-top: 0.5rem;
   }
 </style>
-
-<!-- Turnstile CAPTCHA script -->
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
 <script is:inline>
   const form = document.getElementById('editForm');
@@ -332,16 +306,12 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
     const addTagBtn = document.getElementById('addTagBtn');
     const newTagInput = document.getElementById('newTag');
     const tagsContainer = document.querySelector('.tags-container');
-    const captchaContainer = document.getElementById('captchaContainer');
     const attemptsHint = document.getElementById('attemptsHint');
-
-    let processedImage = null;
-    let captchaRequired = false;
-    let turnstileWidgetId = null;
-    const turnstileSiteKey = form.dataset.turnstileKey;
     const postSlug = form.dataset.slug;
 
-    // Sanitize tag input - only allow alphanumeric, hyphens, underscores
+    let processedImage = null;
+
+    // Sanitize tag input
     function sanitizeTag(tag) {
       return tag.replace(/[^a-z0-9\-_]/g, '');
     }
@@ -373,32 +343,6 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
       }
     });
 
-    // Show CAPTCHA widget
-    function showCaptcha() {
-      if (!turnstileSiteKey) {
-        console.warn('Turnstile site key not configured');
-        return;
-      }
-      captchaContainer.style.display = 'block';
-      captchaRequired = true;
-
-      if (!turnstileWidgetId && window.turnstile) {
-        turnstileWidgetId = window.turnstile.render('#turnstile-widget', {
-          sitekey: turnstileSiteKey,
-          callback: function(token) {
-            console.log('CAPTCHA verified');
-          },
-        });
-      } else if (window.turnstile && turnstileWidgetId) {
-        window.turnstile.reset(turnstileWidgetId);
-      }
-    }
-
-    function getCaptchaToken() {
-      if (!captchaRequired || !window.turnstile) return null;
-      return window.turnstile.getResponse(turnstileWidgetId);
-    }
-
     // Image processing
     imageInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
@@ -428,14 +372,11 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
         const img = new Image();
         const reader = new FileReader();
 
-        reader.onload = (e) => {
-          img.src = e.target.result;
-        };
+        reader.onload = (e) => { img.src = e.target.result; };
 
         img.onload = () => {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-
           let width = img.width;
           let height = img.height;
           const maxWidth = 1024;
@@ -487,13 +428,6 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
         return;
       }
 
-      const captchaToken = getCaptchaToken();
-      if (captchaRequired && !captchaToken) {
-        status.textContent = 'Please complete the CAPTCHA';
-        status.className = 'status error';
-        return;
-      }
-
       submitBtn.disabled = true;
       status.textContent = 'Updating post...';
       status.className = 'status loading';
@@ -501,9 +435,7 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
       try {
         const response = await fetch('/api/edit-post', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             password,
             slug: postSlug,
@@ -511,49 +443,24 @@ const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE
             content,
             tags: selectedTags,
             featured,
-            captchaToken,
-            image: processedImage ? {
-              base64: processedImage.base64,
-              format: processedImage.format
-            } : null
+            image: processedImage ? { base64: processedImage.base64, format: processedImage.format } : null
           })
         });
 
         const result = await response.json();
 
         if (response.ok) {
-          status.textContent = 'Post updated! Rebuilding site... (takes ~2 min)';
+          status.textContent = 'Post updated! Rebuilding site...';
           status.className = 'status success';
-          captchaRequired = false;
-          captchaContainer.style.display = 'none';
           attemptsHint.textContent = '';
-
           status.innerHTML += `<br><a href="/blog/${postSlug}">View post</a> (after rebuild)`;
         } else {
-          if (result.locked) {
-            const minutes = Math.ceil(result.retryAfter / 60);
-            status.textContent = `Locked out for ${minutes} minute(s). Too many failed attempts.`;
-            status.className = 'status error';
-          } else if (result.requiresCaptcha) {
-            showCaptcha();
-            if (result.attemptsRemaining !== undefined) {
-              attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining before lockout`;
-              attemptsHint.style.color = '#e53935';
-            }
-            status.textContent = result.error || 'Please complete the CAPTCHA';
-            status.className = 'status error';
-          } else {
-            if (result.attemptsRemaining !== undefined) {
-              attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining`;
-              attemptsHint.style.color = result.attemptsRemaining <= 1 ? '#e53935' : 'var(--text-muted)';
-            }
-            status.textContent = result.error || 'Failed to update post';
-            status.className = 'status error';
+          if (result.attemptsRemaining !== undefined) {
+            attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining`;
+            attemptsHint.style.color = '#e53935';
           }
-
-          if (window.turnstile && turnstileWidgetId) {
-            window.turnstile.reset(turnstileWidgetId);
-          }
+          status.textContent = result.error || 'Failed to update post';
+          status.className = 'status error';
         }
       } catch (err) {
         status.textContent = 'Error: ' + err.message;
