@@ -11,6 +11,28 @@ Allow: /
 User-agent: Bingbot
 Allow: /
 
+# Social Media / Messaging Preview Bots
+User-agent: WhatsApp
+Allow: /
+
+User-agent: Signal
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
 # AI/LLM Crawlers - Explicitly Allow
 User-agent: GPTBot
 Allow: /
