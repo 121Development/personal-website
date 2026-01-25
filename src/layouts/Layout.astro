@@ -4,7 +4,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = "Erik's Homepage" } = Astro.props;
+const { title, description = "Erik Eliasson - Personal Website" } = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -14,140 +14,387 @@ const { title, description = "Erik's Homepage" } = Astro.props;
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title}</title>
   <meta name="description" content={description}>
-  
+
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website">
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
-  
+
   <!-- Robots -->
   <meta name="robots" content="index, follow">
-  
+
+  <!-- Prevent flash of wrong theme -->
+  <script is:inline>
+    const theme = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  </script>
+
   <style>
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-primary: #1a1a2e;
+      --text-secondary: #4a4a68;
+      --text-muted: #6c6c8a;
+      --accent: #5c6bc0;
+      --accent-hover: #3f51b5;
+      --border: #e8e8ef;
+      --code-bg: #f1f3f4;
+      --shadow: rgba(0, 0, 0, 0.08);
+      --transition: 0.2s ease;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0f0f1a;
+      --bg-secondary: #1a1a2e;
+      --text-primary: #e8e8ef;
+      --text-secondary: #b8b8c8;
+      --text-muted: #8888a0;
+      --accent: #7c8aff;
+      --accent-hover: #9aa4ff;
+      --border: #2a2a40;
+      --code-bg: #1e1e30;
+      --shadow: rgba(0, 0, 0, 0.3);
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 800px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.7;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      transition: background var(--transition), color var(--transition);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
       margin: 0 auto;
-      padding: 2rem;
+      padding: 0 1.5rem;
     }
-    
-    nav {
-      margin-bottom: 3rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid #eee;
+
+    /* Header & Navigation */
+    header {
+      padding: 2rem 0;
+      margin-bottom: 1rem;
     }
-    
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     nav ul {
       list-style: none;
       display: flex;
-      gap: 2rem;
+      gap: 1.5rem;
       flex-wrap: wrap;
+      align-items: center;
     }
-    
+
     nav a {
       text-decoration: none;
-      color: #0066cc;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 0.5rem 0;
+      position: relative;
+      transition: color var(--transition);
     }
-    
+
+    nav a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--accent);
+      transition: width var(--transition);
+    }
+
     nav a:hover {
-      text-decoration: underline;
+      color: var(--accent);
     }
-    
+
+    nav a:hover::after {
+      width: 100%;
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+      color: var(--text-secondary);
+    }
+
+    .theme-toggle:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .sun-icon { display: none; }
+    .moon-icon { display: block; }
+
+    [data-theme="dark"] .sun-icon { display: block; }
+    [data-theme="dark"] .moon-icon { display: none; }
+
+    /* Main Content */
+    main {
+      padding: 2rem 0 4rem;
+    }
+
     h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
     }
-    
+
     h2 {
       font-size: 1.5rem;
-      margin-top: 2rem;
+      font-weight: 600;
+      margin-top: 2.5rem;
       margin-bottom: 1rem;
+      letter-spacing: -0.01em;
     }
-    
+
     h3 {
       font-size: 1.2rem;
-      margin-top: 1.5rem;
-      margin-bottom: 0.5rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
     }
-    
+
     p {
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
+      color: var(--text-secondary);
     }
-    
+
     a {
-      color: #0066cc;
+      color: var(--accent);
+      text-decoration: none;
+      transition: color var(--transition);
     }
-    
+
+    a:hover {
+      color: var(--accent-hover);
+    }
+
+    /* Blog Post List */
     .post-list {
       list-style: none;
     }
-    
+
     .post-item {
       margin-bottom: 2rem;
-      padding-bottom: 2rem;
-      border-bottom: 1px solid #eee;
+      padding: 1.5rem;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      transition: all var(--transition);
     }
-    
+
+    .post-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--shadow);
+    }
+
     .post-date {
-      color: #666;
-      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
-    
+
     .post-title {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       margin: 0.5rem 0;
+      font-weight: 600;
     }
-    
+
+    .post-title a {
+      color: var(--text-primary);
+    }
+
+    .post-title a:hover {
+      color: var(--accent);
+    }
+
     .post-excerpt {
-      color: #555;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin: 0;
     }
-    
+
+    /* Content Styling */
     .content {
       line-height: 1.8;
     }
-    
+
+    .content p {
+      margin-bottom: 1.5rem;
+    }
+
+    .content ul, .content ol {
+      margin-bottom: 1.5rem;
+      padding-left: 1.5rem;
+      color: var(--text-secondary);
+    }
+
+    .content li {
+      margin-bottom: 0.5rem;
+    }
+
+    .content blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 1.5rem;
+      margin: 1.5rem 0;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .content img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+    }
+
+    /* Code Blocks */
     pre {
-      background: #f5f5f5;
-      padding: 1rem;
+      background: var(--code-bg);
+      padding: 1.25rem;
       overflow-x: auto;
-      border-radius: 4px;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
     }
-    
+
     code {
-      background: #f5f5f5;
-      padding: 0.2rem 0.4rem;
-      border-radius: 3px;
+      background: var(--code-bg);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
       font-size: 0.9em;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
     }
-    
+
     pre code {
       background: none;
       padding: 0;
     }
+
+    /* Back Link */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    /* Footer */
+    footer {
+      padding: 2rem 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      nav ul {
+        gap: 1rem;
+      }
+
+      .header-inner {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <nav>
-    <ul>
-      <li><a href="/">Home</a></li>
-      <li><a href="/about">About</a></li>
-      <li><a href="/cv">CV</a></li>
-      <li><a href="/projects">Projects</a></li>
-      <li><a href="/blog">Blog</a></li>
-      <li><a href="/contact">Contact</a></li>
-    </ul>
-  </nav>
-  
-  <main>
-    <slot />
-  </main>
+  <div class="container">
+    <header>
+      <div class="header-inner">
+        <nav>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/cv">CV</a></li>
+            <li><a href="/projects">Projects</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/contact">Contact</a></li>
+          </ul>
+        </nav>
+        <button class="theme-toggle" aria-label="Toggle theme">
+          <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer>
+      <p>&copy; {new Date().getFullYear()} Erik Eliasson</p>
+    </footer>
+  </div>
+
+  <script is:inline>
+    document.querySelector('.theme-toggle').addEventListener('click', () => {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    });
+  </script>
 </body>
 </html>
