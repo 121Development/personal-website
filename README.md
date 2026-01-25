@@ -13,13 +13,13 @@ Minimal, TypeScript-based homepage built with Astro and deployed to Cloudflare W
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Run dev server
-npm run dev
+pnpm dev
 
 # Build and deploy
-npm run deploy
+pnpm deploy
 ```
 
 ## Content Structure
@@ -68,9 +68,9 @@ Just write markdown. First H1 becomes the page title.
 site: 'https://yoursite.com', // Update with your domain
 ```
 
-**`wrangler.toml`:**
-```toml
-name = "your-site-name"  # Update with your preferred Worker name
+**`wrangler.jsonc`:**
+```json
+"name": "your-site-name"  // Update with your preferred Worker name
 ```
 
 **`public/robots.txt`:**
@@ -85,9 +85,9 @@ In your repository Settings → Secrets and variables → Actions, add:
 
 ### 3. Deploy
 
-Push to `main` branch or run:
+Push to `master` branch or run:
 ```bash
-npm run deploy
+pnpm deploy
 ```
 
 ## Workflow
@@ -121,7 +121,7 @@ homepage/
 │   └── workflows/
 │       └── deploy.yml     # CI/CD
 ├── astro.config.mjs
-├── wrangler.toml
+├── wrangler.jsonc
 └── package.json
 ```
 
@@ -149,10 +149,10 @@ All styles are in `src/layouts/Layout.astro`. Modify the `<style>` block.
 ## Development Commands
 
 ```bash
-npm run dev      # Start dev server (localhost:4321)
-npm run build    # Build for production
-npm run preview  # Preview production build locally
-npm run deploy   # Build and deploy to Cloudflare Workers
+pnpm dev      # Start dev server (localhost:4321)
+pnpm build    # Build for production
+pnpm preview  # Preview production build locally
+pnpm deploy   # Build and deploy to Cloudflare Workers
 ```
 
 ## Troubleshooting
@@ -165,11 +165,11 @@ npm run deploy   # Build and deploy to Cloudflare Workers
 ### Deployment fails
 - Verify Cloudflare secrets are set correctly
 - Check GitHub Actions logs
-- Ensure `wrangler.toml` name is unique
+- Ensure `wrangler.jsonc` name is unique
 
 ### Build errors
-- Run `npm ci` to clean install dependencies
-- Check TypeScript errors with `npm run build`
+- Run `pnpm install` to clean install dependencies
+- Check TypeScript errors with `pnpm build`
 
 ## What's Next?
 
