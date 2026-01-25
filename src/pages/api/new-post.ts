@@ -83,7 +83,7 @@ function generateSlug(title: string): string {
   return `${date}-${titleSlug}`;
 }
 
-export const POST: APIRoute = async ({ request, clientAddress }) => {
+export const POST: APIRoute = async ({ request, clientAddress, locals }) => {
   // Rate limiting
   const ip = clientAddress || 'unknown';
   const rateLimit = checkRateLimit(ip);
@@ -105,13 +105,16 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const body = await request.json();
     const { password, title, content, tags, featured, image } = body;
 
-    // Get environment variables
-    const env = (import.meta as any).env || process.env;
-    const ADMIN_PASSWORD = env.ADMIN_PASSWORD;
-    const GITHUB_TOKEN = env.GITHUB_TOKEN;
-    const GITHUB_OWNER = env.GITHUB_OWNER;
-    const GITHUB_REPO = env.GITHUB_REPO;
-    const GITHUB_BRANCH = env.GITHUB_BRANCH || 'master';
+    // Get environment variables from Cloudflare runtime
+    const runtime = (locals as any).runtime;
+    const cfEnv = runtime?.env || {};
+
+    // Fallback to import.meta.env for local dev
+    const ADMIN_PASSWORD = cfEnv.ADMIN_PASSWORD || import.meta.env.ADMIN_PASSWORD;
+    const GITHUB_TOKEN = cfEnv.GITHUB_TOKEN || import.meta.env.GITHUB_TOKEN;
+    const GITHUB_OWNER = cfEnv.GITHUB_OWNER || import.meta.env.GITHUB_OWNER;
+    const GITHUB_REPO = cfEnv.GITHUB_REPO || import.meta.env.GITHUB_REPO;
+    const GITHUB_BRANCH = cfEnv.GITHUB_BRANCH || import.meta.env.GITHUB_BRANCH || 'master';
 
     // Validate password
     if (!ADMIN_PASSWORD || password !== ADMIN_PASSWORD) {
