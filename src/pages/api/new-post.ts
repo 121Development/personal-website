@@ -41,44 +41,21 @@ async function githubAPI(
   endpoint: string,
   token: string,
   method: string = 'GET',
-  body?: object,
-  retries: number = 3
+  body?: object
 ): Promise<Response> {
-  let lastError: Error | null = null;
+  const response = await fetch(`https://api.github.com${endpoint}`, {
+    method,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
+      'User-Agent': '121eliasson-blog',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
 
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(`https://api.github.com${endpoint}`, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-          'Content-Type': 'application/json',
-        },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-
-      // If rate limited, wait and retry
-      if (response.status === 403 || response.status === 429) {
-        const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10);
-        if (i < retries - 1) {
-          await new Promise(r => setTimeout(r, retryAfter * 1000));
-          continue;
-        }
-      }
-
-      return response;
-    } catch (err) {
-      lastError = err as Error;
-      if (i < retries - 1) {
-        const delay = Math.pow(2, i + 1) * 1000;
-        await new Promise(r => setTimeout(r, delay));
-      }
-    }
-  }
-
-  throw lastError || new Error('GitHub API request failed');
+  return response;
 }
 
 function generateSlug(title: string): string {
@@ -146,7 +123,14 @@ export const POST: APIRoute = async ({ request, clientAddress, locals }) => {
     // Validate environment
     if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO) {
       return new Response(
-        JSON.stringify({ error: 'Server configuration error: Missing GitHub settings' }),
+        JSON.stringify({
+          error: 'Server configuration error: Missing GitHub settings',
+          debug: {
+            hasToken: !!GITHUB_TOKEN,
+            hasOwner: !!GITHUB_OWNER,
+            hasRepo: !!GITHUB_REPO
+          }
+        }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
