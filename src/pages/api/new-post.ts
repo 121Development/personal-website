@@ -2,6 +2,17 @@ import type { APIRoute } from 'astro';
 
 export const prerender = false;
 
+// Convert string to base64 (Workers-compatible, handles UTF-8)
+function stringToBase64(str: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 // Simple in-memory rate limiting (resets on cold start)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
@@ -178,7 +189,7 @@ export const POST: APIRoute = async ({ request, clientAddress, locals }) => {
 
     commits.push({
       path: `content/blog/${slug}.md`,
-      content: Buffer.from(markdownContent).toString('base64'),
+      content: stringToBase64(markdownContent),
     });
 
     // Get current commit SHA (needed for creating new commits)
