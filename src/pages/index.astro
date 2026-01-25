@@ -18,11 +18,16 @@ const featuredPosts = await fetchFeaturedPosts();
     <section class="featured-section">
       <h2>Featured Posts</h2>
       <div class="featured-grid">
-        {featuredPosts.map((post) => (
+        {featuredPosts.map((post, index) => (
           <a href={`/blog/${post.slug}`} class="featured-card">
             {post.image ? (
               <div class="featured-thumbnail">
-                <img src={post.image} alt={post.title} loading="lazy" />
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  fetchpriority={index === 0 ? "high" : "auto"}
+                />
               </div>
             ) : (
               <div class="featured-thumbnail placeholder">
