@@ -475,10 +475,10 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     .search-container {
       position: relative;
       width: 90%;
-      max-width: 600px;
-      max-height: 70vh;
+      max-width: 400px;
+      max-height: 60vh;
       background: var(--bg-primary);
-      border-radius: 16px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       box-shadow: 0 20px 60px var(--shadow);
       overflow: hidden;
@@ -536,23 +536,18 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
 
     .search-hint,
     .search-no-results {
-      padding: 2rem;
+      padding: 1rem;
       text-align: center;
       color: var(--text-muted);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
 
     .search-result-item {
       display: block;
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
       text-decoration: none;
       transition: background var(--transition);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .search-result-item:last-child {
-      border-bottom: none;
     }
 
     .search-result-item:hover {
@@ -560,26 +555,8 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     }
 
     .search-result-title {
-      font-weight: 600;
       color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .search-result-date {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.15rem;
-    }
-
-    .search-result-excerpt {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 0.95rem;
     }
 
     .search-results mark {
@@ -678,7 +655,7 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
         </div>
       </div>
       <div class="search-results" id="searchResults">
-        <div class="search-hint">Type to search blog posts...</div>
+        <div class="search-hint">Search posts...</div>
       </div>
     </div>
   </div>
@@ -725,7 +702,7 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
       function closeSearch() {
         searchModal.classList.remove('active');
         searchInput.value = '';
-        searchResults.innerHTML = '<div class="search-hint">Type to search blog posts...</div>';
+        searchResults.innerHTML = '<div class="search-hint">Search posts...</div>';
       }
 
       // Highlight matching text
@@ -738,7 +715,7 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
       // Perform search
       async function performSearch(query) {
         if (!query.trim()) {
-          searchResults.innerHTML = '<div class="search-hint">Type to search blog posts...</div>';
+          searchResults.innerHTML = '<div class="search-hint">Search posts...</div>';
           return;
         }
 
@@ -758,9 +735,7 @@ const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
 
         searchResults.innerHTML = results.map(post => `
           <a href="${post.url}" class="search-result-item">
-            <div class="search-result-title">${highlight(post.title, query)}</div>
-            <div class="search-result-date">${post.date}</div>
-            <div class="search-result-excerpt">${highlight(post.excerpt.slice(0, 100), query)}</div>
+            <span class="search-result-title">${highlight(post.title, query)}</span>
           </a>
         `).join('');
       }
