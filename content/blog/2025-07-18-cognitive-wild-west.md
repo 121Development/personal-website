@@ -5,6 +5,8 @@ featured: true
 
 # Cognitive Wild West
 
+![](/images/blog/cognitive-wild-west.png)
+
 Cognitive Security, **CogSec**, where you are the perimeter and AI enhanced PsyOps is coming for your mind.
 
 **CogSec** is the defence of the human mind. Classical **Information Warfare** targets what you see and hear. **Cognitive warfare** (CW) targets how you interpret, feel and act on it. CW aims to alter our thinking patterns, reasoning, perception, how we make decisions and our values and belief systems via deliberate influence or manipulation. **Focus is cognition itself within individuals, groups and populations.** Often via long term strategic campaigns aimed at undermining trust, demoralise groups, achieve ideological influence etc. Tools used are troll farms, AI agents, AI bot farms, propaganda outlets. Using techniques from neurotech, behavioural science and more.
