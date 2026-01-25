@@ -169,8 +169,9 @@ const allTags = await fetchAllTags();
     transition: all var(--transition);
   }
 
-  .post-item.hidden {
-    display: none;
+  .post-item.hidden,
+  :global(.post-item.hidden) {
+    display: none !important;
   }
 
   .post-item:hover {
@@ -316,54 +317,60 @@ const allTags = await fetchAllTags();
   }
 </style>
 
-<script>
-  // View toggle
-  const toggleBtns = document.querySelectorAll('.toggle-btn');
-  const postList = document.getElementById('post-list');
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', function() {
+    // View toggle
+    const toggleBtns = document.querySelectorAll('.toggle-btn');
+    const postList = document.getElementById('post-list');
 
-  const savedView = localStorage.getItem('blogView') || 'expanded';
-  if (savedView === 'compact') {
-    postList?.classList.add('compact');
+    const savedView = localStorage.getItem('blogView') || 'expanded';
+    if (savedView === 'compact') {
+      postList?.classList.add('compact');
+      toggleBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-view') === 'compact');
+      });
+    }
+
     toggleBtns.forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('data-view') === 'compact');
-    });
-  }
+      btn.addEventListener('click', () => {
+        const view = btn.getAttribute('data-view');
+        toggleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-  toggleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const view = btn.getAttribute('data-view');
-      toggleBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      if (view === 'compact') {
-        postList?.classList.add('compact');
-      } else {
-        postList?.classList.remove('compact');
-      }
-
-      localStorage.setItem('blogView', view || 'expanded');
-    });
-  });
-
-  // Tag filter
-  const tagBtns = document.querySelectorAll('.tag-btn');
-  const postItems = document.querySelectorAll('.post-item');
-
-  tagBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const selectedTag = btn.getAttribute('data-tag');
-
-      tagBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      postItems.forEach(item => {
-        const postTags = item.getAttribute('data-tags')?.split(',') || [];
-
-        if (selectedTag === 'all' || postTags.includes(selectedTag)) {
-          item.classList.remove('hidden');
+        if (view === 'compact') {
+          postList?.classList.add('compact');
         } else {
-          item.classList.add('hidden');
+          postList?.classList.remove('compact');
         }
+
+        localStorage.setItem('blogView', view || 'expanded');
+      });
+    });
+
+    // Tag filter
+    const tagBtns = document.querySelectorAll('.tag-btn');
+    const postItems = document.querySelectorAll('.post-item');
+
+    console.log('Tag filter init:', tagBtns.length, 'buttons,', postItems.length, 'posts');
+
+    tagBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const selectedTag = btn.getAttribute('data-tag');
+        console.log('Tag clicked:', selectedTag);
+
+        tagBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        postItems.forEach(item => {
+          const postTags = item.getAttribute('data-tags')?.split(',') || [];
+          console.log('Post tags:', postTags, 'selected:', selectedTag);
+
+          if (selectedTag === 'all' || postTags.includes(selectedTag)) {
+            item.classList.remove('hidden');
+          } else {
+            item.classList.add('hidden');
+          }
+        });
       });
     });
   });
