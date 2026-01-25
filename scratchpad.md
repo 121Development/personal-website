@@ -39,3 +39,32 @@
          - Markdown to content/blog/
       ↓ GitHub Actions triggers rebuild
   Site deploys with new post (~2 min)
+
+
+    Brute Force Protection
+  ┌──────────┬────────────────────────────────────────┐
+  │ Attempts │                Behavior                │
+  ├──────────┼────────────────────────────────────────┤
+  │ 1-2      │ Normal login, shows remaining attempts │
+  ├──────────┼────────────────────────────────────────┤
+  │ 2+       │ CAPTCHA required                       │
+  ├──────────┼────────────────────────────────────────┤
+  │ 3        │ 1 hour lockout                         │
+  └──────────┴────────────────────────────────────────┘
+  Setup Required
+
+  In Cloudflare Dashboard:
+
+  1. Go to Turnstile → Add Site
+  2. Choose "Managed" widget type
+  3. Add your domain
+  4. Get the Site Key and Secret Key
+
+  Add to Workers secrets:
+  ┌──────────────────────┬───────────────────────┐
+  │       Variable       │         Type          │
+  ├──────────────────────┼───────────────────────┤
+  │ TURNSTILE_SITE_KEY   │ Can be plain variable │
+  ├──────────────────────┼───────────────────────┤
+  │ TURNSTILE_SECRET_KEY │ Should be secret      │
+  └──────────────────────┴───────────────────────┘

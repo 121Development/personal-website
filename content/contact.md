@@ -4,15 +4,13 @@
 
 Feel free to reach out for:
 - Security consulting
-- Blockchain development
 - System architecture discussions
 - Collaboration opportunities
 
 ## Links
 
-- **GitHub**: [your-github-username](https://github.com/your-github-username)
-- **LinkedIn**: [your-linkedin](https://linkedin.com/in/your-profile)
-- **Email**: your-email@example.com
+- **GitHub**: [your-github-username](https://github.com/121Development)
+- **LinkedIn**: [your-linkedin](https://www.linkedin.com/in/erik-eliasson-5a16b518/)
 
 ## Location
 
