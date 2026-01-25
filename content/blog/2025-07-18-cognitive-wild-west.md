@@ -1,5 +1,6 @@
 ---
 tags: [security, AI, cybersecurity]
+featured: true
 ---
 
 # Cognitive Wild West

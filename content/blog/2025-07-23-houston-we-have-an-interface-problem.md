@@ -1,5 +1,6 @@
 ---
 tags: [AI, technology]
+featured: true
 ---
 
 # Houston we have an interface problem

@@ -18,6 +18,7 @@ export interface BlogPost {
   excerpt?: string;
   image?: string;
   tags?: string[];
+  featured?: boolean;
 }
 
 export interface Project {

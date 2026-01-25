@@ -64,6 +64,7 @@ export async function fetchBlogPosts(): Promise<BlogPost[]> {
     // Parse frontmatter
     const { frontmatter, content: contentWithoutFrontmatter } = parseFrontmatter(rawContent);
     const tags = (frontmatter.tags as string[] | undefined) || [];
+    const featured = frontmatter.featured === 'true' || frontmatter.featured === true;
 
     // Extract date from filename (format: YYYY-MM-DD-title.md)
     const dateMatch = slug.match(/^(\d{4}-\d{2}-\d{2})-(.+)$/);
@@ -96,12 +97,21 @@ export async function fetchBlogPosts(): Promise<BlogPost[]> {
       content: parseMarkdown(contentWithoutH1),
       excerpt,
       image,
-      tags
+      tags,
+      featured
     };
   });
 
   // Sort by date, newest first
   return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+/**
+ * Fetch featured blog posts
+ */
+export async function fetchFeaturedPosts(): Promise<BlogPost[]> {
+  const posts = await fetchBlogPosts();
+  return posts.filter(post => post.featured);
 }
 
 /**
@@ -116,6 +126,7 @@ export async function fetchBlogPost(slug: string): Promise<BlogPost | null> {
   // Parse frontmatter
   const { frontmatter, content: contentWithoutFrontmatter } = parseFrontmatter(rawContent);
   const tags = (frontmatter.tags as string[] | undefined) || [];
+  const featured = frontmatter.featured === 'true' || frontmatter.featured === true;
 
   const dateMatch = slug.match(/^(\d{4}-\d{2}-\d{2})-(.+)$/);
   const date = dateMatch ? dateMatch[1] : new Date().toISOString().split('T')[0];
@@ -147,7 +158,8 @@ export async function fetchBlogPost(slug: string): Promise<BlogPost | null> {
     content: parseMarkdown(contentWithoutH1),
     excerpt,
     image,
-    tags
+    tags,
+    featured
   };
 }
 

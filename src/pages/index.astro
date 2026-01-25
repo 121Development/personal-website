@@ -1,20 +1,191 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { fetchFeaturedPosts } from '../lib/content';
+
+const featuredPosts = await fetchFeaturedPosts();
 ---
 
-<Layout title="Home - Erik's Homepage">
-  <h1>Welcome</h1>
-  
-  <p>
-    Senior Security Advisor specializing in Security Risk Management, 
-    blockchain development, and system design.
-  </p>
-  
-  <h2>Quick Links</h2>
-  <ul>
-    <li><a href="/about">Learn more about me</a></li>
-    <li><a href="/projects">View my projects</a></li>
-    <li><a href="/blog">Read my blog</a></li>
-    <li><a href="/contact">Get in touch</a></li>
-  </ul>
+<Layout title="Home - 121Eliasson">
+  <section class="hero">
+    <h1>Welcome</h1>
+    <p class="intro">
+      Senior Security Advisor specializing in Security Risk Management,
+      blockchain development, and system design.
+    </p>
+  </section>
+
+  {featuredPosts.length > 0 && (
+    <section class="featured-section">
+      <h2>Featured Posts</h2>
+      <div class="featured-grid">
+        {featuredPosts.map((post) => (
+          <a href={`/blog/${post.slug}`} class="featured-card">
+            {post.image ? (
+              <div class="featured-thumbnail">
+                <img src={post.image} alt={post.title} loading="lazy" />
+              </div>
+            ) : (
+              <div class="featured-thumbnail placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+              </div>
+            )}
+            <div class="featured-content">
+              <h3 class="featured-title">{post.title}</h3>
+              {post.tags && post.tags.length > 0 && (
+                <div class="featured-tags">
+                  {post.tags.map((tag) => (
+                    <span class="tag">{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="links-section">
+    <h2>Quick Links</h2>
+    <ul class="quick-links">
+      <li><a href="/about">Learn more about me</a></li>
+      <li><a href="/projects">View my projects</a></li>
+      <li><a href="/blog">Read my blog</a></li>
+      <li><a href="/contact">Get in touch</a></li>
+    </ul>
+  </section>
 </Layout>
+
+<style>
+  .hero {
+    margin-bottom: 3rem;
+  }
+
+  .intro {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .featured-section {
+    margin-bottom: 3rem;
+  }
+
+  .featured-section h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  .featured-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .featured-card {
+    display: block;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    transition: all var(--transition);
+  }
+
+  .featured-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px var(--shadow);
+    border-color: var(--accent);
+  }
+
+  .featured-thumbnail {
+    width: 100%;
+    height: 140px;
+    overflow: hidden;
+    background: var(--bg-primary);
+  }
+
+  .featured-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition);
+  }
+
+  .featured-card:hover .featured-thumbnail img {
+    transform: scale(1.05);
+  }
+
+  .featured-thumbnail.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+  }
+
+  .featured-thumbnail.placeholder svg {
+    width: 48px;
+    height: 48px;
+    opacity: 0.5;
+  }
+
+  .featured-content {
+    padding: 1rem 1.25rem 1.25rem;
+  }
+
+  .featured-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.75rem;
+    line-height: 1.3;
+  }
+
+  .featured-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .links-section h2 {
+    margin-bottom: 1rem;
+  }
+
+  .quick-links {
+    list-style: none;
+    padding: 0;
+  }
+
+  .quick-links li {
+    margin-bottom: 0.75rem;
+  }
+
+  .quick-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--transition);
+  }
+
+  .quick-links a:hover {
+    color: var(--accent);
+  }
+
+  @media (max-width: 640px) {
+    .featured-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
