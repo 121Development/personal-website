@@ -9,8 +9,8 @@ Feel free to reach out for:
 
 ## Links
 
-- **GitHub**: [your-github-username](https://github.com/121Development)
-- **LinkedIn**: [your-linkedin](https://www.linkedin.com/in/erik-eliasson-5a16b518/)
+- **GitHub**: [github.com/121Development](https://github.com/121Development)
+- **LinkedIn**: [linkedin.com/in/erik-eliasson](https://www.linkedin.com/in/erik-eliasson-5a16b518/)
 
 ## Location
 
