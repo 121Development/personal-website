@@ -4,7 +4,7 @@ tags: [personal, economics]
 
 # Tackla framtiden med mentala modeller
 
-![](/images/blog/Framtid-hockey.jpeg)
+![](/images/blog/Framtid-hockey.webp)
 
 Här är ett axplock av mina mentala modeller och storheter för att navigera in i framtiden!
 

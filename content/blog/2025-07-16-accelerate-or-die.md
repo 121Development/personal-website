@@ -4,7 +4,7 @@ tags: [AI, technology]
 
 # Accelerate or die
 
-![](/images/blog/eacc.jpeg)
+![](/images/blog/eacc.webp)
 
 What is e/acc? I've seen some people have it in their X bio, and others reference it in their posts. You probably have to?
 

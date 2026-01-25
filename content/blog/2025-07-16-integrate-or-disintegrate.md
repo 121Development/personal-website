@@ -4,7 +4,7 @@ tags: [security]
 
 # Integrate Or Disintegrate
 
-![](/images/blog/integrate-process.jpeg)
+![](/images/blog/integrate-process.webp)
 
 Trust the process, or rather, integrate critical items into your systems so they can't be missed.
 

@@ -4,7 +4,7 @@ tags: [AI]
 
 # What do you want?
 
-![](/images/blog/what-do-you-want.jpeg)
+![](/images/blog/what-do-you-want.webp)
 
 It hit me the other day. My time now isn't spent on HOW to do things; it's spent on figuring out WHAT to actually do.
 

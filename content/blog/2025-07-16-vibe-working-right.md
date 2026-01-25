@@ -4,7 +4,7 @@ tags: [AI]
 
 # Vibe Working Right
 
-![](/images/blog/vibe-work.jpeg)
+![](/images/blog/vibe-work.webp)
 
 Your AI payoff, the value you get from AI, starts from your current level of expertise in your field and with the tools you use.
 

@@ -4,7 +4,7 @@ tags: [technology, coding]
 
 # A thought from last week is the importance of understanding data
 
-![](/images/blog/understanding-data.jpeg)
+![](/images/blog/understanding-data.webp)
 
 Knowledge work revolves around information or data. You aggregate, summarize, and derive insights from data. You structure data. You consume and create data. You retrieve and search for data and documents.
 

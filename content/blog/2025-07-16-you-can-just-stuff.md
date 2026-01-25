@@ -4,7 +4,7 @@ tags: [personal, writing]
 
 # You can just {insert action} stuff!
 
-![](/images/blog/Creative-head.jpeg)
+![](/images/blog/Creative-head.webp)
 
 You can just…
 

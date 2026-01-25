@@ -4,7 +4,7 @@ tags: [AI, security]
 
 # Angaende statsministerns bruk av AI
 
-![](/images/blog/statsministern.jpeg)
+![](/images/blog/statsministern.webp)
 
 AI är här för att stanna. Vi måste som samhälle och nation förstå och dra nytta av AI. Därför tycker jag att det är bra att ledningen testar och lär sig om AI. Förstår dess förmågor och potential, likväl som dess begränsningar och risker.
 

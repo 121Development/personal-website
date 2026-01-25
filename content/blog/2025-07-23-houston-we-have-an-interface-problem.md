@@ -5,7 +5,7 @@ featured: true
 
 # Houston we have an interface problem
 
-![](/images/blog/houston-interface-problem.jpeg)
+![](/images/blog/houston-interface-problem.webp)
 
 ### The AI rocket has blasted off, but it's using a fraction of its capacity.
 

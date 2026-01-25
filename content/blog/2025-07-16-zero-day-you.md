@@ -4,7 +4,7 @@ tags: [cybersecurity]
 
 # Zero-Day You
 
-![](/images/blog/zero-day-you.jpeg)
+![](/images/blog/zero-day-you.webp)
 
 You are the weak link. You are the walking zero-day. You have a habit, a knowledge gap, a potential weakness that can be exploited.
 

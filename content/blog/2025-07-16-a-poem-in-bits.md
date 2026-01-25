@@ -4,7 +4,7 @@ tags: [AI, writing]
 
 # A Poem In Bits
 
-![](/images/blog/Bit-Poem.jpeg)
+![](/images/blog/Bit-Poem.webp)
 
 In bits and bytes, thy truth doth shine so clear,
 
