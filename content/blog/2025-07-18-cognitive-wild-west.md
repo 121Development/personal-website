@@ -5,7 +5,7 @@ featured: true
 
 # Cognitive Wild West
 
-![](/images/blog/cognitive-wild-west.png)
+![](/images/blog/cognitive-wild-west.webp)
 
 Cognitive Security, **CogSec**, where you are the perimeter and AI enhanced PsyOps is coming for your mind.
 

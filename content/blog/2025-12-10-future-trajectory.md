@@ -4,7 +4,7 @@ tags: [economics, technology]
 
 # Future Trajectory - We live in a VUCA and BANI world
 
-![](/images/blog/future-variability.png)
+![](/images/blog/future-variability.webp)
 
 I'm not sure if we will get Terminator or Idiocracy, but I feel we are seeing signs of both. We are living in exponential times. To predict future outcome is harder than ever. The range of possible scenarios is widening.
 
