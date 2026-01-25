@@ -22,9 +22,10 @@ const siteUrl = "https://121eliasson.com";
 const postUrl = `${siteUrl}/blog/${post.slug}`;
 const ogImage = post.image || "/images/og-default.png";
 
-// Generate keywords from title
+// Generate keywords from title and tags
 const titleWords = post.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-const keywords = [...new Set([...titleWords, 'security', 'AI', 'technology', 'erik eliasson'])].join(', ');
+const tagWords = post.tags || [];
+const keywords = [...new Set([...titleWords, ...tagWords, 'erik eliasson'])].join(', ');
 
 // Article structured data
 const articleSchema = {
@@ -65,8 +66,15 @@ const articleSchema = {
     <meta itemprop="datePublished" content={post.date}>
     <meta itemprop="author" content="Erik Eliasson">
 
-    <div class="post-date">
-      <time datetime={post.date} itemprop="datePublished">{post.date}</time>
+    <div class="post-meta">
+      <time datetime={post.date} itemprop="datePublished" class="post-date">{post.date}</time>
+      {post.tags && post.tags.length > 0 && (
+        <span class="post-tags">
+          {post.tags.map((tag: string) => (
+            <a href={`/blog?tag=${tag}`} class="tag">{tag}</a>
+          ))}
+        </span>
+      )}
     </div>
     <h1 itemprop="headline">{post.title}</h1>
     <div class="content" itemprop="articleBody" set:html={post.content} />
@@ -77,3 +85,45 @@ const articleSchema = {
   <!-- Article Structured Data -->
   <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
 </Layout>
+
+<style>
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .post-date {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .post-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all var(--transition);
+  }
+
+  .tag:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+</style>

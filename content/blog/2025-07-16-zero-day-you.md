@@ -1,3 +1,7 @@
+---
+tags: [cybersecurity]
+---
+
 # Zero-Day You
 
 ![](/images/blog/zero-day-you.jpeg)

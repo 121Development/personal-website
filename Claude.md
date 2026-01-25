@@ -11,6 +11,7 @@ A minimal, SEO-optimized personal homepage built with Astro and TypeScript, depl
 - **CI/CD**: GitHub Actions
 - **Content**: Markdown files in `/content` directory
 - **Styling**: Vanilla CSS (inline in Layout.astro)
+- **Package Manager**: pnpm (always use pnpm, not npm)
 
 ### Design Philosophy
 - **Minimal**: Zero unnecessary dependencies, clean code
@@ -56,8 +57,8 @@ homepage/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml          # Auto-deploy on push
-├── astro.config.mjs            # Astro + Cloudflare adapter config
-├── wrangler.toml               # Cloudflare Workers config
+├── astro.config.mjs            # Astro config
+├── wrangler.jsonc              # Cloudflare Workers config
 ├── tsconfig.json               # TypeScript config
 ├── package.json                # Dependencies & scripts
 └── README.md                   # User documentation
@@ -93,7 +94,8 @@ homepage/
    - Returns array of project objects
 
 **Implementation Details**:
-- Uses Node.js `fs/promises` for async file reading
+- Uses Astro's `import.meta.glob` for build-time file reading
+- Uses `marked` library for markdown to HTML parsing
 - All reading happens at build time (SSG)
 - No runtime API calls
 - Content changes require rebuild/redeploy
@@ -139,13 +141,13 @@ interface Project {
 
 ### Build Process
 
-1. **Trigger**: Push to `main` branch
+1. **Trigger**: Push to `master` branch
 2. **GitHub Actions** (`.github/workflows/deploy.yml`):
    - Checkout repo
-   - Install Node.js 20
-   - Run `npm ci` (install dependencies)
-   - Run `npm run build` (Astro build)
-   - Deploy to Cloudflare Workers via Wrangler
+   - Setup pnpm and Node.js 20
+   - Run `pnpm install` (install dependencies)
+   - Run `pnpm build` (Astro build)
+   - Deploy to Cloudflare Workers via `pnpm exec wrangler deploy`
 
 3. **Astro Build**:
    - Reads all content from `/content` directory
@@ -165,8 +167,8 @@ interface Project {
 - `CLOUDFLARE_ACCOUNT_ID`: Cloudflare account ID
 
 **Configuration Files**:
-- `wrangler.toml`: Workers name, compatibility date, assets directory
-- `astro.config.mjs`: Site URL, Cloudflare adapter settings
+- `wrangler.jsonc`: Workers name, compatibility date, assets directory
+- `astro.config.mjs`: Site URL, build settings
 
 ---
 
@@ -259,16 +261,19 @@ Description of the project...
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start dev server (http://localhost:4321)
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 
 # Preview production build
-npm run preview
+pnpm preview
+
+# Deploy to Cloudflare Workers
+pnpm deploy
 ```
 
 ### Adding New Content
@@ -400,7 +405,7 @@ export default defineConfig({
 ## Troubleshooting
 
 ### Build Fails
-- Check TypeScript errors: `npm run build`
+- Check TypeScript errors: `pnpm build`
 - Verify all imports resolve
 - Check content file syntax (valid markdown)
 
@@ -413,7 +418,7 @@ export default defineConfig({
 ### Deployment Fails
 - Verify GitHub secrets set correctly
 - Check Cloudflare account ID
-- Ensure wrangler.toml `name` is unique
+- Ensure wrangler.jsonc `name` is unique
 - Review GitHub Actions logs
 
 ### Styling Issues
@@ -478,16 +483,12 @@ export default defineConfig({
    - Third-party: Giscus, utterances
    - GitHub discussions integration
 
-6. **Dark Mode**
-   - CSS custom properties
-   - localStorage persistence
-
-7. **Markdown Extensions**
+6. **Markdown Extensions**
    - Syntax highlighting (Shiki)
    - Math rendering (KaTeX)
    - Mermaid diagrams
 
-8. **Image Optimization**
+7. **Image Optimization**
    - Astro Image integration
    - WebP conversion
    - Lazy loading
@@ -498,15 +499,15 @@ export default defineConfig({
 
 ### Production
 - `astro`: ^4.16.18 - Framework
-- `@astrojs/cloudflare`: ^11.1.1 - Cloudflare adapter
+- `marked`: ^17.0.1 - Markdown parser
 
 ### Development
 - `typescript`: ^5.7.2 - Type checking
-- `wrangler`: ^3.95.0 - Cloudflare CLI
+- `wrangler`: ^4.60.0 - Cloudflare CLI
 
 ### Node.js
 - Required: v20 or higher
-- Built-in modules used: `fs/promises`, `path`
+- Package manager: pnpm (required)
 
 ---
 
@@ -554,13 +555,13 @@ export default defineConfig({
 ## Maintenance
 
 ### Regular Tasks
-- Update dependencies: `npm update`
+- Update dependencies: `pnpm update`
 - Review GitHub Actions runs
 - Monitor Cloudflare analytics
 - Update content regularly
 
 ### Version Control
-- Main branch = production
+- Master branch = production
 - Direct commits acceptable (solo developer)
 - Or use feature branches for major changes
 

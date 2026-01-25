@@ -1,3 +1,7 @@
+---
+tags: [AI]
+---
+
 # Vibe Working Right
 
 ![](/images/blog/vibe-work.jpeg)

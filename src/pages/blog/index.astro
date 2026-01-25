@@ -1,11 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { fetchBlogPosts } from '../../lib/content';
+import { fetchBlogPosts, fetchAllTags } from '../../lib/content';
 
 const posts = await fetchBlogPosts();
+const allTags = await fetchAllTags();
 ---
 
-<Layout title="Blog - Erik's Homepage">
+<Layout title="Blog - 121Eliasson">
   <div class="blog-header">
     <h1>Blog</h1>
     <div class="view-toggle">
@@ -29,10 +30,19 @@ const posts = await fetchBlogPosts();
     </div>
   </div>
 
+  {allTags.length > 0 && (
+    <div class="tag-filter">
+      <button class="tag-btn active" data-tag="all">All</button>
+      {allTags.map((tag) => (
+        <button class="tag-btn" data-tag={tag}>{tag}</button>
+      ))}
+    </div>
+  )}
+
   {posts.length > 0 ? (
     <ul class="post-list" id="post-list">
       {posts.map((post) => (
-        <li class="post-item" data-has-image={post.image ? "true" : "false"}>
+        <li class="post-item" data-has-image={post.image ? "true" : "false"} data-tags={post.tags?.join(',') || ''}>
           {post.image && (
             <a href={`/blog/${post.slug}`} class="post-image-link">
               <img src={post.image} alt={post.title} class="post-image" loading="lazy" />
@@ -41,6 +51,13 @@ const posts = await fetchBlogPosts();
           <div class="post-content">
             <div class="post-meta">
               <span class="post-date">{post.date}</span>
+              {post.tags && post.tags.length > 0 && (
+                <span class="post-tags">
+                  {post.tags.map((tag) => (
+                    <span class="tag">{tag}</span>
+                  ))}
+                </span>
+              )}
             </div>
             <h2 class="post-title">
               <a href={`/blog/${post.slug}`}>{post.title}</a>
@@ -62,7 +79,7 @@ const posts = await fetchBlogPosts();
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .blog-header h1 {
@@ -105,6 +122,39 @@ const posts = await fetchBlogPosts();
     height: 20px;
   }
 
+  /* Tag Filter */
+  .tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tag-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    transition: all var(--transition);
+    font-family: inherit;
+  }
+
+  .tag-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .tag-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
   .post-list {
     list-style: none;
     padding: 0;
@@ -117,6 +167,10 @@ const posts = await fetchBlogPosts();
     border-radius: 12px;
     border: 1px solid var(--border);
     transition: all var(--transition);
+  }
+
+  .post-item.hidden {
+    display: none;
   }
 
   .post-item:hover {
@@ -144,7 +198,11 @@ const posts = await fetchBlogPosts();
   }
 
   .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
     margin-bottom: 0.5rem;
+    flex-wrap: wrap;
   }
 
   .post-date {
@@ -153,6 +211,22 @@ const posts = await fetchBlogPosts();
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+
+  .post-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
   }
 
   .post-title {
@@ -201,6 +275,9 @@ const posts = await fetchBlogPosts();
   :global(.compact) .post-meta {
     margin-bottom: 0;
     min-width: 100px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
   }
 
   :global(.compact) .post-title {
@@ -213,6 +290,10 @@ const posts = await fetchBlogPosts();
     align-items: center;
     gap: 1rem;
     flex: 1;
+  }
+
+  :global(.compact) .post-tags {
+    display: none;
   }
 
   @media (max-width: 640px) {
@@ -236,10 +317,10 @@ const posts = await fetchBlogPosts();
 </style>
 
 <script>
+  // View toggle
   const toggleBtns = document.querySelectorAll('.toggle-btn');
   const postList = document.getElementById('post-list');
 
-  // Load saved preference
   const savedView = localStorage.getItem('blogView') || 'expanded';
   if (savedView === 'compact') {
     postList?.classList.add('compact');
@@ -251,7 +332,6 @@ const posts = await fetchBlogPosts();
   toggleBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const view = btn.getAttribute('data-view');
-
       toggleBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
@@ -262,6 +342,29 @@ const posts = await fetchBlogPosts();
       }
 
       localStorage.setItem('blogView', view || 'expanded');
+    });
+  });
+
+  // Tag filter
+  const tagBtns = document.querySelectorAll('.tag-btn');
+  const postItems = document.querySelectorAll('.post-item');
+
+  tagBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedTag = btn.getAttribute('data-tag');
+
+      tagBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      postItems.forEach(item => {
+        const postTags = item.getAttribute('data-tags')?.split(',') || [];
+
+        if (selectedTag === 'all' || postTags.includes(selectedTag)) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
     });
   });
 </script>

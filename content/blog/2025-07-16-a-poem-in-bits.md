@@ -1,3 +1,7 @@
+---
+tags: [AI, writing]
+---
+
 # A Poem In Bits
 
 ![](/images/blog/Bit-Poem.jpeg)

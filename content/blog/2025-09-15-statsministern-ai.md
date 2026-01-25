@@ -1,3 +1,7 @@
+---
+tags: [AI, security]
+---
+
 # Angaende statsministerns bruk av AI
 
 ![](/images/blog/statsministern.jpeg)

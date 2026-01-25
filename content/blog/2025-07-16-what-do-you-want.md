@@ -1,3 +1,7 @@
+---
+tags: [AI]
+---
+
 # What do you want?
 
 ![](/images/blog/what-do-you-want.jpeg)

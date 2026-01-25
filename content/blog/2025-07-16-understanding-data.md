@@ -1,3 +1,7 @@
+---
+tags: [technology, coding]
+---
+
 # A thought from last week is the importance of understanding data
 
 ![](/images/blog/understanding-data.jpeg)

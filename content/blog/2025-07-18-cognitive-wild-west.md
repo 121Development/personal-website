@@ -1,3 +1,7 @@
+---
+tags: [security, AI, cybersecurity]
+---
+
 # Cognitive Wild West
 
 Cognitive Security, **CogSec**, where you are the perimeter and AI enhanced PsyOps is coming for your mind.

@@ -1,3 +1,7 @@
+---
+tags: [security]
+---
+
 # Integrate Or Disintegrate
 
 ![](/images/blog/integrate-process.jpeg)

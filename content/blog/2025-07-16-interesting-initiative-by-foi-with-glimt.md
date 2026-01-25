@@ -1,3 +1,7 @@
+---
+tags: [security]
+---
+
 # Interesting initiative by FOI with Glimt!
 
 In the age of technology it's nice to see some counter and complimentary initiatives.

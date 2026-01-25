@@ -1,3 +1,7 @@
+---
+tags: [AI, economics]
+---
+
 # Hot (and lukewarm) takes for 2025!
 
 *Repost from LinkedIn from January.*

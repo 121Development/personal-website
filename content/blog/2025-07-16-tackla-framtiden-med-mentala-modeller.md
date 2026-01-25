@@ -1,3 +1,7 @@
+---
+tags: [personal, economics]
+---
+
 # Tackla framtiden med mentala modeller
 
 ![](/images/blog/Framtid-hockey.jpeg)

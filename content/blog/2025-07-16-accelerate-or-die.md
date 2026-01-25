@@ -1,3 +1,7 @@
+---
+tags: [AI, technology]
+---
+
 # Accelerate or die
 
 ![](/images/blog/eacc.jpeg)

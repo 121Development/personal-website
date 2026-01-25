@@ -1,3 +1,7 @@
+---
+tags: [coding, technology]
+---
+
 # Building a Modern Homepage with Astro
 
 This is my first blog post about building a minimal, TypeScript-based homepage.

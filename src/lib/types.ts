@@ -17,6 +17,7 @@ export interface BlogPost {
   content: string;
   excerpt?: string;
   image?: string;
+  tags?: string[];
 }
 
 export interface Project {

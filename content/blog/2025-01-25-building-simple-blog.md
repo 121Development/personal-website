@@ -1,3 +1,7 @@
+---
+tags: [coding, technology]
+---
+
 # Building a Simple Blog with Astro and Cloudflare Workers
 
 Creating a blog doesn't need to be complicated. This post walks through building a minimal, TypeScript-based blog using Astro and deploying it to Cloudflare Workers.

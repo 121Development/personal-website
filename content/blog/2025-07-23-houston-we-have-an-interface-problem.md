@@ -1,3 +1,7 @@
+---
+tags: [AI, technology]
+---
+
 # Houston we have an interface problem
 
 ![](/images/blog/houston-interface-problem.jpeg)

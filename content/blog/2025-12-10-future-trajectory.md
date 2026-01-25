@@ -1,3 +1,7 @@
+---
+tags: [economics, technology]
+---
+
 # Future Trajectory - We live in a VUCA and BANI world
 
 ![](/images/blog/future-variability.png)
