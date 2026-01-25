@@ -1,31 +1,34 @@
 # About
 
-121Eliasson is a personal blog about topics that interest me: Security, AI, Technology and Health.
+I help people and organisations stay safe and proactively navigate the current state of flux.
 
-I'm curious about the future and we are living in a super interesting time with a technological event horizon around the corner coupled with geopolitical shifts and an economy facing population decline and never ending QE.
+We have a technological event horizon around the corner coupled with geopolitical shifts and an economy facing population decline and never ending QE in our collective economic experiment.
 
-I will try to post thought provoking ideas, personal takes and commentary on current events.
+Things are, and will get interesting.
 
-Let's enjoy the ride together!
+## What I Do
 
-## Background
+My strength is understanding technology, people, and big picture events. I connect dots across domains and see patterns others miss.
 
-Senior Security Advisor with expertise in Security Risk Management (SRM) methodology, encompassing personnel security, physical security, cyber security, and security management.
-
-I run a security company and specialize in system design for project management systems. My technical expertise spans:
-
-- **Security**: Risk management, compliance frameworks, crisis management
-- **Blockchain**: Etherlink and Polygon chain development
-- **AI & Tooling**: Agent management systems, LLM integration
-- **Software Architecture**: Clean code, TypeScript, modern web frameworks
-
-## Location
-
-Based in Sweden, working on projects globally.
+Special skill: problem solving. Nothing is impossible.
 
 ## Interests
 
-Building secure, efficient systems that solve real problems. Currently focused on agent management platforms and compliance automation.
+- **Security** - Risk management, threat assessment, keeping people and systems safe
+- **AI** - Where it's heading and how to harness it
+- **Technology** - The tools shaping our future
+- **Health** - Optimizing performance and longevity
+- **Management** - Leading teams through uncertainty
+
+## Location
+
+Based in Sweden, working globally.
+
+## Mottos
+
+*Skate to where the puck is going.*
+
+*Who dares wins.*
 
 ## About This Website
 
