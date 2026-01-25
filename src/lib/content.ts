@@ -84,7 +84,11 @@ export async function fetchBlogPosts(): Promise<BlogPost[]> {
     // Extract first paragraph as excerpt (skip H1 and images)
     const lines = contentWithoutH1.split('\n\n');
     const excerptRaw = lines.find(line => line.trim() && !line.startsWith('#') && !line.startsWith('![')) || '';
-    const excerpt = excerptRaw.replace(/[*_`]/g, '').trim();
+    // Strip markdown formatting and image syntax from excerpt
+    const excerpt = excerptRaw
+      .replace(/!\[.*?\]\(.*?\)/g, '')  // Remove image markdown
+      .replace(/[*_`]/g, '')
+      .trim();
 
     // Extract first image from markdown
     const imageMatch = contentWithoutFrontmatter.match(/!\[.*?\]\((.*?)\)/);
@@ -149,7 +153,11 @@ export async function fetchBlogPost(slug: string): Promise<BlogPost | null> {
   // Extract excerpt
   const lines = contentWithoutH1.split('\n\n');
   const excerptRaw = lines.find(line => line.trim() && !line.startsWith('#') && !line.startsWith('![')) || '';
-  const excerpt = excerptRaw.replace(/[*_`]/g, '').trim();
+  // Strip markdown formatting and image syntax from excerpt
+  const excerpt = excerptRaw
+    .replace(/!\[.*?\]\(.*?\)/g, '')  // Remove image markdown
+    .replace(/[*_`]/g, '')
+    .trim();
 
   return {
     slug,
