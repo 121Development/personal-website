@@ -16,6 +16,7 @@ export interface BlogPost {
   date: string;
   content: string;
   excerpt?: string;
+  image?: string;
 }
 
 export interface Project {

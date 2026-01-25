@@ -4,7 +4,7 @@ import { fetchBlogPost, fetchBlogPosts } from '../../lib/content';
 
 export async function getStaticPaths() {
   const posts = await fetchBlogPosts();
-  
+
   return posts.map((post) => ({
     params: { slug: post.slug },
     props: { post }
@@ -17,14 +17,63 @@ const { post } = Astro.props;
 if (!post) {
   return Astro.redirect('/blog');
 }
+
+const siteUrl = "https://121eliasson.com";
+const postUrl = `${siteUrl}/blog/${post.slug}`;
+const ogImage = post.image || "/images/og-default.png";
+
+// Generate keywords from title
+const titleWords = post.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+const keywords = [...new Set([...titleWords, 'security', 'AI', 'technology', 'erik eliasson'])].join(', ');
+
+// Article structured data
+const articleSchema = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": post.title,
+  "description": post.excerpt || post.title,
+  "image": ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`,
+  "datePublished": post.date,
+  "dateModified": post.date,
+  "author": {
+    "@type": "Person",
+    "name": "Erik Eliasson",
+    "url": siteUrl
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": "Erik Eliasson",
+    "url": siteUrl
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": postUrl
+  },
+  "url": postUrl
+};
 ---
 
-<Layout title={`${post.title} - Blog`} description={post.excerpt}>
-  <article>
-    <div class="post-date">{post.date}</div>
-    <h1>{post.title}</h1>
-    <div class="content" set:html={post.content} />
+<Layout
+  title={`${post.title} - 121Eliasson`}
+  description={post.excerpt || `Read ${post.title} by Erik Eliasson`}
+  image={ogImage}
+  type="article"
+  publishedDate={post.date}
+  keywords={keywords}
+>
+  <article itemscope itemtype="https://schema.org/BlogPosting">
+    <meta itemprop="datePublished" content={post.date}>
+    <meta itemprop="author" content="Erik Eliasson">
+
+    <div class="post-date">
+      <time datetime={post.date} itemprop="datePublished">{post.date}</time>
+    </div>
+    <h1 itemprop="headline">{post.title}</h1>
+    <div class="content" itemprop="articleBody" set:html={post.content} />
   </article>
-  
+
   <a href="/blog" class="back-link">← Back to blog</a>
+
+  <!-- Article Structured Data -->
+  <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
 </Layout>

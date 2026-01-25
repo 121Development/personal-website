@@ -1,9 +1,18 @@
 {
   "schema_version": "v1",
-  "name_for_human": "Erik's Portfolio",
-  "name_for_model": "erik_portfolio",
-  "description_for_human": "Security expert, blockchain developer, and system architect",
-  "description_for_model": "Access Erik's CV, projects, blog posts about security, blockchain, and software architecture. View professional experience, current projects, and technical writing.",
-  "contact_email": "your-email@example.com",
-  "legal_info_url": "https://yoursite.com/legal"
+  "name_for_human": "121Eliasson - Erik's Blog",
+  "name_for_model": "erik_eliasson_blog",
+  "description_for_human": "Personal blog by Erik Eliasson covering Security, AI, Technology and Health topics",
+  "description_for_model": "Access Erik Eliasson's blog posts and articles about cybersecurity, artificial intelligence, technology trends, and health. Erik is a Senior Security Advisor writing about cognitive security, AI implications, future trends, and technology insights. The blog includes posts in both English and Swedish.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://121eliasson.com/openapi.yaml",
+    "is_user_authenticated": false
+  },
+  "logo_url": "https://121eliasson.com/images/logo.png",
+  "contact_email": "erik@121eliasson.com",
+  "legal_info_url": "https://121eliasson.com/about"
 }

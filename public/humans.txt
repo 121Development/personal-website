@@ -1,0 +1,18 @@
+/* TEAM */
+Author: Erik Eliasson
+Site: https://121eliasson.com
+Twitter: @121eliasson
+LinkedIn: linkedin.com/in/erik-eliasson-5a16b518
+Location: Sweden
+
+/* SITE */
+Last update: 2025
+Standards: HTML5, CSS3, ES6+
+Components: Astro, TypeScript
+Software: VS Code, Claude Code
+Hosting: Cloudflare Workers
+
+/* THANKS */
+Built with Astro (astro.build)
+Deployed on Cloudflare (cloudflare.com)
+AI assistance by Claude (anthropic.com)

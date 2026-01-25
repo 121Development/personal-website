@@ -125,13 +125,47 @@ homepage/
 └── package.json
 ```
 
-## SEO & Discoverability
+## SEO & GEO (Generative Engine Optimization)
 
-✅ Server-side rendered (SEO-friendly)  
-✅ Dynamic meta tags per page  
-✅ robots.txt configured for AI agents  
-✅ AI agent discoverability (`.well-known/ai-plugin.json`)  
-✅ Open Graph tags  
+The site is fully optimized for both traditional search engines and AI/LLM crawlers.
+
+### Meta Tags (per page)
+- **Basic**: title, description, keywords, author, canonical URL
+- **Open Graph**: type, url, title, description, image, site_name, locale
+- **Twitter Cards**: card, url, title, description, image, creator
+- **Robots**: Enhanced directives (max-image-preview, max-snippet, max-video-preview)
+
+### Structured Data (JSON-LD)
+- **Person schema**: Author info, job title, social profiles
+- **WebSite schema**: Site metadata
+- **BlogPosting schema**: Per-article with headline, author, dates, images
+- **Microdata**: Semantic HTML attributes (itemscope, itemprop)
+
+### Static SEO Files
+```
+public/
+├── robots.txt              # Search engine & AI crawler instructions
+├── humans.txt              # Site credits and info
+├── sitemap.xml             # Auto-generated (dynamic)
+├── rss.xml                 # RSS feed for subscribers
+└── .well-known/
+    └── ai-plugin.json      # AI agent discovery (OpenAI standard)
+```
+
+### AI/LLM Crawler Support
+The `robots.txt` explicitly allows major AI crawlers:
+- GPTBot, ChatGPT-User (OpenAI)
+- Claude-Web, anthropic-ai (Anthropic)
+- Google-Extended, Googlebot
+- PerplexityBot, Bytespider, CCBot
+
+### RSS Feed
+Available at `/rss.xml` with all blog posts, categories, and proper metadata.
+
+### Sitemap
+Dynamic sitemap at `/sitemap.xml` includes:
+- All static pages with priority and change frequency
+- All blog posts with last modification dates
 
 ## Customization
 
@@ -177,10 +211,10 @@ This is a minimal setup focused on functionality. You can:
 
 1. Enhance the design/styling
 2. Add markdown processing (syntax highlighting, etc.)
-3. Add RSS feed
-4. Add sitemap generation
-5. Add analytics
-6. Add search functionality
+3. Add analytics (Cloudflare Web Analytics recommended)
+4. Add search functionality
+5. Add comments (Giscus, utterances)
+6. Add dark/light mode toggle (already implemented)
 
 ## License
 

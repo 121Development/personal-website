@@ -34,17 +34,22 @@ export async function fetchBlogPosts(): Promise<BlogPost[]> {
       ? dateMatch[2].split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
       : slug.replace(/-/g, ' ');
 
-    // Extract first paragraph as excerpt (skip H1)
+    // Extract first paragraph as excerpt (skip H1 and images)
     const lines = rawContent.split('\n\n');
-    const excerptRaw = lines.find(line => line.trim() && !line.startsWith('#')) || '';
+    const excerptRaw = lines.find(line => line.trim() && !line.startsWith('#') && !line.startsWith('![')) || '';
     const excerpt = excerptRaw.replace(/[*_`]/g, '').trim();
+
+    // Extract first image from markdown
+    const imageMatch = rawContent.match(/!\[.*?\]\((.*?)\)/);
+    const image = imageMatch ? imageMatch[1] : undefined;
 
     return {
       slug,
       title,
       date,
       content: parseMarkdown(rawContent),
-      excerpt
+      excerpt,
+      image
     };
   });
 

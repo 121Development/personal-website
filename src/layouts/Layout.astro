@@ -2,9 +2,24 @@
 interface Props {
   title: string;
   description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  publishedDate?: string;
+  keywords?: string;
 }
 
-const { title, description = "Erik Eliasson - Personal Website" } = Astro.props;
+const {
+  title,
+  description = "Erik Eliasson - Security, AI, Technology and Health insights from a Senior Security Advisor",
+  image = "/images/og-default.png",
+  type = "website",
+  publishedDate,
+  keywords = "security, AI, artificial intelligence, technology, cybersecurity, blockchain, software architecture"
+} = Astro.props;
+
+const siteUrl = "https://121eliasson.com";
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl).href;
+const ogImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
 ---
 
 <!DOCTYPE html>
@@ -14,14 +29,64 @@ const { title, description = "Erik Eliasson - Personal Website" } = Astro.props;
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title}</title>
   <meta name="description" content={description}>
+  <meta name="keywords" content={keywords}>
+  <meta name="author" content="Erik Eliasson">
+  <link rel="canonical" href={canonicalUrl}>
 
-  <!-- Open Graph / Social -->
-  <meta property="og:type" content="website">
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content={type}>
+  <meta property="og:url" content={canonicalUrl}>
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
+  <meta property="og:image" content={ogImage}>
+  <meta property="og:site_name" content="121Eliasson">
+  <meta property="og:locale" content="en_US">
+  {publishedDate && <meta property="article:published_time" content={publishedDate} />}
+  {publishedDate && <meta property="article:author" content="Erik Eliasson" />}
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content={canonicalUrl}>
+  <meta name="twitter:title" content={title}>
+  <meta name="twitter:description" content={description}>
+  <meta name="twitter:image" content={ogImage}>
+  <meta name="twitter:creator" content="@121eliasson">
 
   <!-- Robots -->
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="googlebot" content="index, follow">
+
+  <!-- RSS Feed -->
+  <link rel="alternate" type="application/rss+xml" title="121Eliasson Blog RSS" href={`${siteUrl}/rss.xml`}>
+
+  <!-- Structured Data - Person -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Erik Eliasson",
+    "url": siteUrl,
+    "jobTitle": "Senior Security Advisor",
+    "description": "Security expert writing about AI, technology, cybersecurity and health",
+    "sameAs": [
+      "https://x.com/121eliasson",
+      "https://linkedin.com/in/erik-eliasson-5a16b518",
+      "https://medium.com/@121eliasson",
+      "https://121eliasson.substack.com"
+    ]
+  })} />
+
+  <!-- Structured Data - Website -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "121Eliasson",
+    "url": siteUrl,
+    "description": description,
+    "author": {
+      "@type": "Person",
+      "name": "Erik Eliasson"
+    }
+  })} />
 
   <!-- Prevent flash of wrong theme -->
   <script is:inline>
@@ -281,10 +346,16 @@ const { title, description = "Erik Eliasson - Personal Website" } = Astro.props;
       font-style: italic;
     }
 
-    .content img {
-      max-width: 100%;
+    .content :global(img),
+    article :global(img),
+    main :global(img) {
+      max-width: 100% !important;
+      width: 100%;
+      height: auto !important;
       border-radius: 8px;
       margin: 1.5rem 0;
+      display: block;
+      object-fit: contain;
     }
 
     /* Code Blocks */
