@@ -8,8 +8,6 @@ dist/
 
 # Cloudflare
 .wrangler/
-wrangler.jsonc
-*.jsonc
 
 # Environment variables
 .env

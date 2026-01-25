@@ -1,0 +1,7 @@
+{
+  "name": "121eliasson-com",
+  "compatibility_date": "2025-01-25",
+  "assets": {
+    "directory": "./dist"
+  }
+}
