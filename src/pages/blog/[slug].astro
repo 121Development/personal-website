@@ -80,7 +80,10 @@ const articleSchema = {
     <div class="content" itemprop="articleBody" set:html={post.content} />
   </article>
 
-  <a href="/blog" class="back-link">← Back to blog</a>
+  <div class="post-actions">
+    <a href="/blog" class="back-link">← Back to blog</a>
+    <a href={`/edit?slug=${post.slug}`} class="edit-link">Edit post</a>
+  </div>
 
   <!-- Article Structured Data -->
   <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
@@ -125,5 +128,29 @@ const articleSchema = {
     background: var(--accent);
     border-color: var(--accent);
     color: white;
+  }
+
+  .post-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .edit-link {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all var(--transition);
+  }
+
+  .edit-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
   }
 </style>

@@ -1,0 +1,556 @@
+---
+export const prerender = false;
+import Layout from '../layouts/Layout.astro';
+import { fetchBlogPost, fetchAllTags } from '../lib/content';
+
+const slug = Astro.url.searchParams.get('slug');
+const post = slug ? await fetchBlogPost(slug) : null;
+const allTags = await fetchAllTags();
+
+// Get Turnstile site key from environment
+const runtime = (Astro.locals as any).runtime;
+const cfEnv = runtime?.env || {};
+const TURNSTILE_SITE_KEY = cfEnv.TURNSTILE_SITE_KEY || import.meta.env.TURNSTILE_SITE_KEY || '';
+---
+
+<Layout title={post ? `Edit: ${post.title}` : 'Edit Post - 121Eliasson'}>
+  <h1>Edit Blog Post</h1>
+
+  {!slug && (
+    <p class="error-message">No post specified. Add ?slug=your-post-slug to the URL.</p>
+  )}
+
+  {slug && !post && (
+    <p class="error-message">Post not found: {slug}</p>
+  )}
+
+  {post && (
+    <form id="editForm" class="post-form" data-turnstile-key={TURNSTILE_SITE_KEY} data-slug={slug}>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+        <p class="hint" id="attemptsHint"></p>
+      </div>
+
+      <!-- CAPTCHA container (hidden by default) -->
+      <div class="form-group captcha-container" id="captchaContainer" style="display: none;">
+        <label>Verify you're human</label>
+        <div id="turnstile-widget"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" required value={post.title} />
+      </div>
+
+      <div class="form-group">
+        <label>Tags</label>
+        <div class="tags-container">
+          {allTags.map((tag) => (
+            <label class="tag-checkbox">
+              <input
+                type="checkbox"
+                name="tags"
+                value={tag}
+                checked={post.tags?.includes(tag)}
+              />
+              <span>{tag}</span>
+            </label>
+          ))}
+          <div class="new-tag-input">
+            <input type="text" id="newTag" placeholder="New tag..." />
+            <button type="button" id="addTagBtn">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="image">Replace Featured Image (optional)</label>
+        {post.image && (
+          <div class="current-image">
+            <p class="hint">Current image:</p>
+            <img src={post.image} alt="Current featured image" />
+          </div>
+        )}
+        <input type="file" id="image" name="image" accept="image/png,image/jpeg,image/jpg" />
+        <p class="hint">Leave empty to keep current image. New image will be resized to max 1024px.</p>
+        <div id="imagePreview" class="image-preview"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="featured">
+          <input type="checkbox" id="featured" name="featured" checked={post.featured} />
+          Featured post (show on homepage)
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="content">Content (Markdown)</label>
+        <textarea id="content" name="content" rows="20" required set:text={post.content.replace(/<[^>]*>/g, '')} />
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" id="submitBtn">Update Post</button>
+        <a href={`/blog/${slug}`} class="cancel-btn">Cancel</a>
+        <div id="status" class="status"></div>
+      </div>
+    </form>
+  )}
+</Layout>
+
+<style>
+  .error-message {
+    color: #e53935;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid #e53935;
+    border-radius: 8px;
+  }
+
+  .post-form {
+    max-width: 100%;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="password"],
+  .form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color var(--transition);
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 300px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .current-image {
+    margin-bottom: 1rem;
+  }
+
+  .current-image img {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .tag-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.8rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-weight: normal;
+  }
+
+  .tag-checkbox:has(input:checked) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .tag-checkbox input {
+    display: none;
+  }
+
+  .new-tag-input {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .new-tag-input input {
+    width: 120px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .new-tag-input button {
+    padding: 0.4rem 0.8rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .image-preview {
+    margin-top: 1rem;
+  }
+
+  .image-preview img {
+    max-width: 300px;
+    max-height: 200px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .form-group input[type="file"] {
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 0.5rem;
+  }
+
+  .form-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  #submitBtn {
+    padding: 0.75rem 2rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  #submitBtn:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  #submitBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .cancel-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--transition);
+  }
+
+  .cancel-btn:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  .status {
+    font-size: 0.95rem;
+  }
+
+  .status.error {
+    color: #e53935;
+  }
+
+  .status.success {
+    color: #43a047;
+  }
+
+  .status.loading {
+    color: var(--text-muted);
+  }
+
+  .captcha-container {
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  #attemptsHint {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
+</style>
+
+<!-- Turnstile CAPTCHA script -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<script is:inline>
+  const form = document.getElementById('editForm');
+  if (form) {
+    const submitBtn = document.getElementById('submitBtn');
+    const status = document.getElementById('status');
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('imagePreview');
+    const addTagBtn = document.getElementById('addTagBtn');
+    const newTagInput = document.getElementById('newTag');
+    const tagsContainer = document.querySelector('.tags-container');
+    const captchaContainer = document.getElementById('captchaContainer');
+    const attemptsHint = document.getElementById('attemptsHint');
+
+    let processedImage = null;
+    let captchaRequired = false;
+    let turnstileWidgetId = null;
+    const turnstileSiteKey = form.dataset.turnstileKey;
+    const postSlug = form.dataset.slug;
+
+    // Add new tag
+    addTagBtn.addEventListener('click', () => {
+      const tagValue = newTagInput.value.trim().toLowerCase();
+      if (tagValue && !document.querySelector(`input[value="${tagValue}"]`)) {
+        const label = document.createElement('label');
+        label.className = 'tag-checkbox';
+        label.innerHTML = `
+          <input type="checkbox" name="tags" value="${tagValue}" checked />
+          <span>${tagValue}</span>
+        `;
+        tagsContainer.insertBefore(label, document.querySelector('.new-tag-input'));
+        newTagInput.value = '';
+      }
+    });
+
+    newTagInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addTagBtn.click();
+      }
+    });
+
+    // Show CAPTCHA widget
+    function showCaptcha() {
+      if (!turnstileSiteKey) {
+        console.warn('Turnstile site key not configured');
+        return;
+      }
+      captchaContainer.style.display = 'block';
+      captchaRequired = true;
+
+      if (!turnstileWidgetId && window.turnstile) {
+        turnstileWidgetId = window.turnstile.render('#turnstile-widget', {
+          sitekey: turnstileSiteKey,
+          callback: function(token) {
+            console.log('CAPTCHA verified');
+          },
+        });
+      } else if (window.turnstile && turnstileWidgetId) {
+        window.turnstile.reset(turnstileWidgetId);
+      }
+    }
+
+    function getCaptchaToken() {
+      if (!captchaRequired || !window.turnstile) return null;
+      return window.turnstile.getResponse(turnstileWidgetId);
+    }
+
+    // Image processing
+    imageInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        processedImage = null;
+        imagePreview.innerHTML = '';
+        return;
+      }
+
+      status.textContent = 'Processing image...';
+      status.className = 'status loading';
+
+      try {
+        processedImage = await processImage(file);
+        imagePreview.innerHTML = `<img src="${processedImage.dataUrl}" alt="Preview" />`;
+        status.textContent = `Image processed: ${processedImage.width}x${processedImage.height}, ${Math.round(processedImage.size / 1024)}KB`;
+        status.className = 'status success';
+      } catch (err) {
+        status.textContent = 'Error processing image: ' + err.message;
+        status.className = 'status error';
+        processedImage = null;
+      }
+    });
+
+    async function processImage(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+          img.src = e.target.result;
+        };
+
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          let width = img.width;
+          let height = img.height;
+          const maxWidth = 1024;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          let dataUrl = canvas.toDataURL('image/webp', 0.85);
+          let format = 'webp';
+
+          if (!dataUrl.startsWith('data:image/webp')) {
+            dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            format = 'jpg';
+          }
+
+          const base64 = dataUrl.split(',')[1];
+          const size = Math.round((base64.length * 3) / 4);
+
+          resolve({ dataUrl, base64, format, width, height, size });
+        };
+
+        img.onerror = () => reject(new Error('Failed to load image'));
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const password = document.getElementById('password').value;
+      const title = document.getElementById('title').value;
+      const content = document.getElementById('content').value;
+      const featured = document.getElementById('featured').checked;
+
+      const selectedTags = Array.from(document.querySelectorAll('input[name="tags"]:checked'))
+        .map(cb => cb.value);
+
+      if (!password || !title || !content) {
+        status.textContent = 'Please fill in all required fields';
+        status.className = 'status error';
+        return;
+      }
+
+      const captchaToken = getCaptchaToken();
+      if (captchaRequired && !captchaToken) {
+        status.textContent = 'Please complete the CAPTCHA';
+        status.className = 'status error';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      status.textContent = 'Updating post...';
+      status.className = 'status loading';
+
+      try {
+        const response = await fetch('/api/edit-post', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            password,
+            slug: postSlug,
+            title,
+            content,
+            tags: selectedTags,
+            featured,
+            captchaToken,
+            image: processedImage ? {
+              base64: processedImage.base64,
+              format: processedImage.format
+            } : null
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          status.textContent = 'Post updated! Rebuilding site... (takes ~2 min)';
+          status.className = 'status success';
+          captchaRequired = false;
+          captchaContainer.style.display = 'none';
+          attemptsHint.textContent = '';
+
+          status.innerHTML += `<br><a href="/blog/${postSlug}">View post</a> (after rebuild)`;
+        } else {
+          if (result.locked) {
+            const minutes = Math.ceil(result.retryAfter / 60);
+            status.textContent = `Locked out for ${minutes} minute(s). Too many failed attempts.`;
+            status.className = 'status error';
+          } else if (result.requiresCaptcha) {
+            showCaptcha();
+            if (result.attemptsRemaining !== undefined) {
+              attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining before lockout`;
+              attemptsHint.style.color = '#e53935';
+            }
+            status.textContent = result.error || 'Please complete the CAPTCHA';
+            status.className = 'status error';
+          } else {
+            if (result.attemptsRemaining !== undefined) {
+              attemptsHint.textContent = `${result.attemptsRemaining} attempt(s) remaining`;
+              attemptsHint.style.color = result.attemptsRemaining <= 1 ? '#e53935' : 'var(--text-muted)';
+            }
+            status.textContent = result.error || 'Failed to update post';
+            status.className = 'status error';
+          }
+
+          if (window.turnstile && turnstileWidgetId) {
+            window.turnstile.reset(turnstileWidgetId);
+          }
+        }
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        status.className = 'status error';
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+</script>
