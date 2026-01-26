@@ -14,4 +14,4 @@ Feel free to reach out for:
 
 ## Location
 
-Based in Sweden, available for remote work globally.
+Based in Stockholm, Sweden
