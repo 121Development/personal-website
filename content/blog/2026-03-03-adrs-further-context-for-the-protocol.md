@@ -1,0 +1,377 @@
+---
+tags: [AI, agent]
+---
+
+# ADRS: Further context for the protocol
+
+This text is intended as a companion to the ADRS protocol specification. It captures intent, philosophy, architectural reasoning, launch strategy, and ecosystem dynamics discussed beyond the formal spec.
+
+1. Purpose of This Document
+
+The ADRS specification defines the mechanics of the protocol.
+
+This document explains:
+	•	Why ADRS exists
+	•	How it is expected to evolve socially and economically
+	•	How trust and confidence should be interpreted
+	•	The role of aggregators and meta-aggregators
+	•	Launch and bootstrapping strategy
+	•	Ecosystem incentives
+	•	Strategic design decisions behind constraints like 3-layer domains
+
+This is not normative.
+This is interpretive and strategic context.
+
+⸻
+
+2. What ADRS Actually Is
+
+ADRS is:
+
+A probabilistic routing and reputation layer for agent-to-agent delegation.
+
+It is not:
+	•	A global reputation oracle
+	•	A centralized directory
+	•	A blockchain registry
+	•	A governance framework
+	•	A taxonomy authority
+
+It is a data-layer protocol that allows agents to:
+	1.	Announce capabilities
+	2.	Prove interactions occurred
+	3.	Publish receipts
+	4.	Compute trust locally
+
+Everything else is interpretation.
+
+⸻
+
+3. Trust and Confidence Philosophy
+
+3.1 No Default Trust
+
+New agents start as:
+
+score: null
+confidence: 0
+
+Not neutral.
+Not average.
+Not 700.
+
+Unknown.
+
+This prevents cold-start inflation and reset attacks.
+
+⸻
+
+3.2 Score vs Confidence
+
+Trust is decomposed into:
+	•	Score → Estimated performance quality
+	•	Confidence → Evidence weight supporting that estimate
+
+Score may move quickly.
+Confidence must grow slowly.
+
+Confidence depends on:
+	•	Receipt count
+	•	Unique counterparties
+	•	Grounding ratio
+	•	Double-signature ratio
+	•	Payment presence
+	•	Recency
+
+⸻
+
+3.3 Receipt Strength Gradient
+
+Receipts become progressively harder to fabricate:
+	1.	Single-signed, ungrounded
+	2.	Single-signed, grounded
+	3.	Double-signed
+	4.	Double-signed + grounded
+	5.	Double-signed + grounded + paid
+
+The protocol intentionally aligns trust weight with fabrication cost.
+
+⸻
+
+3.4 Per-Capability Reputation
+
+Reputation attaches to:
+
+(agent_id, capability_id)
+
+Not the agent globally.
+
+This prevents:
+	•	Skill contamination
+	•	Generalist masking
+	•	Inflated cross-domain reputation
+
+⸻
+
+4. Discovery Model
+
+Discovery combines three layers:
+	1.	Domain routing
+	2.	Semantic embedding similarity
+	3.	Reputation filtering
+
+Domains provide coarse routing.
+Embeddings provide nuance.
+Reputation provides risk estimation.
+
+Delegation occurs at capability level.
+
+⸻
+
+5. Why Domains Are Limited to 3 Layers
+
+Domains exist for:
+	•	Gossip routing
+	•	Subscription filtering
+	•	Human legibility
+
+They are not ontologies.
+
+Example:
+
+finance.tax.vat
+
+Granularity beyond 3 layers belongs in:
+	•	capability_id
+	•	tags
+	•	schema
+	•	embeddings
+
+Deep nesting would fragment gossip and increase routing instability.
+
+Three layers constrain complexity while preserving expressiveness.
+
+⸻
+
+6. Aggregators — The Interpretation Layer
+
+Aggregators:
+	•	Index announcements
+	•	Store receipts
+	•	Compute trust
+	•	Run vector search
+	•	Serve signed discovery results
+
+They are:
+
+Opinionated risk modeling engines.
+
+They are comparable to:
+	•	Moody’s (credit risk modeling)
+	•	Dun & Bradstreet (business intelligence aggregation)
+
+But with critical differences:
+	•	Data is cryptographically verifiable
+	•	Evidence is auditable
+	•	Multiple aggregators can compete
+	•	Clients can query multiple aggregators
+	•	No lock-in exists at protocol level
+
+Interpretation is competitive.
+
+⸻
+
+7. Meta-Aggregators
+
+As aggregators diverge in modeling, meta-aggregators naturally emerge.
+
+Meta-aggregators:
+	•	Query multiple aggregators
+	•	Compare ranking outputs
+	•	Detect bias patterns
+	•	Measure inter-aggregator divergence
+	•	Rank aggregators themselves
+
+Reputation becomes recursive:
+
+Agents → Aggregators → Meta-Aggregators
+
+This creates competitive accountability without centralized governance.
+
+⸻
+
+8. Payment as Trust Amplifier
+
+Payment is optional.
+
+But paid receipts:
+	•	Increase cost of fabrication
+	•	Signal economic stake
+	•	Reduce spam attack surface
+
+A grounded + double-signed + paid receipt is economically expensive to fake at scale.
+
+Payment does not create trust.
+It increases signal credibility.
+
+⸻
+
+9. Anchoring and Historical Durability
+
+Anchoring:
+	•	Commits receipt sets via Merkle root
+	•	Publishes root on-chain
+	•	Enables inclusion proofs
+	•	Prevents silent history rewriting
+
+Chain choice is flexible.
+
+Anchoring does not guarantee:
+	•	Truthfulness
+	•	Fair ranking
+
+It guarantees:
+	•	Durable commitment
+
+⸻
+
+10. Aggregator Incentives and Profitability
+
+Aggregators can earn via:
+	•	Query fees
+	•	Deep audit access
+	•	Enterprise SLAs
+	•	Analytics products
+	•	Payment verification services
+
+They must not:
+	•	Sell ranking positions
+	•	Fabricate evidence
+	•	Suppress receipts without audit risk
+
+Competition and auditability constrain behavior.
+
+Stake or bonding can add economic accountability but is optional.
+
+⸻
+
+11. Network Bootstrapping Strategy
+
+Initial launch structure:
+	•	agentdrs.org hosts spec and reference docs
+	•	1–2 independent full nodes
+	•	1 public aggregator
+	•	Public bootstrap peers
+	•	Public skill templates
+	•	Early ecosystem integration (e.g., OpenClaw)
+
+OpenClaw is:
+	•	Early traction vector
+	•	Not protocol owner
+	•	Not governance authority
+
+ADRS must remain ecosystem-neutral.
+
+⸻
+
+12. Bootstrapping Mechanics
+
+Nodes connect via:
+	•	libp2p
+	•	Noise encryption
+	•	GossipSub topics
+	•	ADRS namespace (adrs/v1/...)
+
+Bootstrap peers are required initially.
+
+Over time:
+	•	Peer exchange grows mesh
+	•	DHT stabilizes routing
+	•	Aggregators emerge
+
+Social coordination precedes decentralization.
+
+⸻
+
+13. Early-Stage Fragility
+
+In first months:
+	•	Few receipts
+	•	Low confidence everywhere
+	•	Heavy reliance on aggregators
+	•	Cold-start vulnerability
+
+This is expected.
+
+Stability and transparency matter more than scale initially.
+
+⸻
+
+14. Strategic Constraints
+
+ADRS deliberately avoids:
+	•	Governance token
+	•	Mandatory chain
+	•	Central taxonomy
+	•	Mandatory staking
+	•	On-chain dependency
+
+It prioritizes:
+	•	Low entry barrier
+	•	Optional hardening layers
+	•	Competitive interpretation
+	•	Economic incentive alignment
+
+⸻
+
+15. Long-Term Structural Vision
+
+If successful, ADRS becomes:
+	•	The routing layer of machine delegation
+	•	The risk modeling substrate of agent economies
+	•	A competitive interpretation market
+	•	An infrastructure primitive
+
+Power may concentrate economically in large aggregators.
+
+But protocol design ensures:
+	•	Replaceability
+	•	Auditability
+	•	Competitive constraint
+
+⸻
+
+16. What ADRS Is Not Trying to Solve
+
+It does not solve:
+	•	Moral truth
+	•	Objective service quality
+	•	Legal dispute resolution
+	•	Final arbitration
+	•	Human trust replacement
+
+It solves:
+
+Scalable, probabilistic, economically weighted risk estimation between autonomous agents.
+
+⸻
+
+17. Future Exploration Areas
+	•	Cold-start modeling frameworks
+	•	Anti-Sybil economic thresholds
+	•	Aggregator staking models
+	•	Anchor-set cross-validation
+	•	Domain recommendation layer (non-binding)
+	•	Meta-aggregator standardization
+	•	Enterprise private aggregator networks
+
+⸻
+
+18. Foundational Principle
+
+ADRS is built on one structural idea:
+
+Trust is not assigned.
+Trust is computed from verifiable evidence under economic constraints.
+
+Everything else is layered around that.
