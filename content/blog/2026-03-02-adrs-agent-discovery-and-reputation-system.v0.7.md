@@ -7,7 +7,7 @@ featured: true
 
 ![](/images/blog/2026-03-02-adrs-agent-discovery-and-reputation-system.jpg)
 
-**Protocol Specification — v0.6 (Public Draft)**
+**Protocol Specification — v0.7 (Public Draft)**
 
 **Authors:** Erik Eliasson  
 **Created:** 2026-02-26  
@@ -146,7 +146,7 @@ All ADRS messages share a single envelope.
 
 ```json
 {
-  "msg_id": "<multihash of JCS(unsigned_envelope)>",
+  "msg_id": "<multihash of JCS(id_object)>",
   "prev": "<msg_id of previous message in this chain> | null",
   "payload": { ... },
   "pow": { ... } | null,
@@ -156,25 +156,27 @@ All ADRS messages share a single envelope.
 
 Where:
 
-- `unsigned_envelope = { "prev": prev, "payload": payload, "pow": pow_or_null }`
-- `signing_object = { "msg_id": msg_id, "prev": prev, "pow": pow_or_null }`
+- `id_object = { "payload": payload, "prev": prev }`
+- `signing_object = { "msg_id": msg_id, "pow": pow_or_null }`
+
+Field order in prose examples is non-normative; JCS determines canonical key ordering.
 
 `sig` signs the canonical bytes of `JCS(signing_object)`.
 
 This means:
 
 - `payload` is authenticated through `msg_id`
-- `prev` is authenticated directly
-- `pow` is authenticated directly
+- `prev` is authenticated through `msg_id`
+- `pow` is authenticated directly by `sig`
 
 Payloads MUST NOT contain signature fields.
 
 | Field     | Required | Description |
 | --------- | -------- | ----------- |
-| `msg_id`  | MUST     | Multihash(SHA-256, JCS(unsigned_envelope)). Canonical message identifier. |
+| `msg_id`  | MUST     | Multihash(SHA-256, JCS(id_object)). Canonical message identifier. |
 | `prev`    | MAY      | Hash-chain link. Use `null` for first message in a chain. |
 | `payload` | MUST     | Message content for the message type. |
-| `pow`     | MAY      | Proof-of-work stamp. If absent, canonicalize as `null` in hashing/signing contexts. |
+| `pow`     | MAY      | Proof-of-work stamp. If absent, canonicalize as `null` in signing contexts. |
 | `sig`     | MUST     | Ed25519 signature over JCS(signing_object). |
 
 **Signature authority rule (absolute):**
@@ -184,10 +186,10 @@ Payloads MUST NOT contain signature fields.
 **Verification procedure:**
 
 1. Extract `prev`, `payload`, and `pow`.
-2. Compute `JCS({"prev": prev, "payload": payload, "pow": pow_or_null})`.
+2. Compute `JCS({"payload": payload, "prev": prev})`.
 3. Compute `multihash(SHA-256, canonical_bytes)` to obtain expected `msg_id`.
 4. Verify envelope `msg_id` equals expected `msg_id`.
-5. Compute `JCS({"msg_id": msg_id, "prev": prev, "pow": pow_or_null})`.
+5. Compute `JCS({"msg_id": msg_id, "pow": pow_or_null})`.
 6. Decode `payload.agent_id` (Bech32m) to Ed25519 public key bytes.
 7. Verify `sig` over the canonical bytes from step 5 using that public key.
 8. If `pow` is present, verify it per Section 4.5.
@@ -265,7 +267,7 @@ Publishing to domain `a.b.c` MUST also publish to `a.b` and `a`. Maximum depth i
 
 ### 4.5 Proof of Work
 
-PoW is computed over `msg_id` and stored outside the payload.
+PoW is computed over `msg_id` and stored outside the payload. `pow` is NOT part of `msg_id` computation.
 
 ```json
 "pow": {
@@ -344,7 +346,7 @@ Optional external bindings:
 
 | Type | Proves | Verification |
 | ---- | ------ | ------------ |
-| `eip8004` | On-chain identity | Verify registry ownership on specified chain |
+| `erc8004` | On-chain identity | Verify registry ownership on specified chain |
 | `dns` | Domain control | TXT record or `/.well-known/adrs.json` |
 | `ens` | ENS ownership | On-chain resolution |
 | `x509` | Organization identity | Certificate chain validation |
@@ -415,13 +417,13 @@ Aggregator taxonomies MAY exist but are advisory.
 
 Embedding suites are identified as `adrs-embeddings/{YYYY-MM-DD}`.
 
-#### 6.3.1 Reference Suite for ADRS v0.6
+#### 6.3.1 Reference Suite for ADRS v0.7
 
 **Suite ID:** `adrs-embeddings/2026-03-01`
 
 **Model (normative):**
 
-- SentenceTransformers-compatible model: `google/embeddinggemma-300M`
+- SentenceTransformers-compatible model: `google/embedding-gemma-300M`
 - Produce exactly 256 dimensions by truncating the model output vector to the first 256 float32 values
 - Vectors MUST be L2-normalized after truncation and before encoding
 
@@ -477,7 +479,8 @@ Aggregators MUST publish a capability announcement with at least one capability 
           "unique_clients": 0,
           "grounded_pct": 0,
           "double_signed_pct": 0,
-          "paid_pct": 0,
+          "paid_claimed_pct": 0,
+          "paid_verified_pct": 0,
           "recency_window_days": 0
         }
       },
@@ -647,10 +650,11 @@ The trust output schema and recency weighting are intentionally subjective, but 
 - `data_coverage.unique_clients`
 - `data_coverage.grounded_pct`
 - `data_coverage.double_signed_pct`
-- `data_coverage.paid_pct`
+- `data_coverage.paid_claimed_pct`
+- `data_coverage.paid_verified_pct`
 - `data_coverage.recency_window_days`
 
-How these are combined into trust is implementation-specific unless pinned by a future profile.
+Aggregators MUST NOT conflate claimed payments with verified payments. `paid_claimed_pct` measures receipts that assert payment occurred, while `paid_verified_pct` measures receipts for which the aggregator has independently verified payment by a supported payment-verification method. How these are combined into trust is implementation-specific unless pinned by a future profile such as companion proposal AGG-TRUST-001.
 
 ---
 
@@ -750,16 +754,18 @@ Protocol version appears in:
 
 Clients MAY subscribe to multiple versions during migration.
 
-### 11.4 Upgrade Notes from v0.5
+### 11.4 Upgrade Notes from v0.6.1
 
 Compared with v0.5, this version makes the following implementation-critical clarifications:
 
-- the signed material now covers `prev` and `pow`, not just the payload hash
+- `msg_id` is now computed from `{payload, prev}` only, eliminating the `pow` recursion bug
+- the signed material now covers `pow`, while `prev` is authenticated through `msg_id`
 - aggregator HTTPS responses are first-class ADRS payloads with `payload.agent_id`
 - ADRS identity is explicitly bound to libp2p node identity
 - ADRS defines its own DHT protocol ID as `/adrs/kad/1.0.0`
 - `peer-binding` is introduced for nodes that separate ADRS and libp2p keys
 - hex usage is explicitly limited to `pow.nonce` and `interaction-token.challenge`
+- companion trust-profile work such as AGG-TRUST-001 remains out of scope for the core wire protocol
 
 ---
 
@@ -772,6 +778,7 @@ The following remain intentionally open for future profiles rather than this cor
 - richer aggregator transparency requirements
 - receipt-summary standardization details
 - formal interoperability with external on-chain registries beyond anchor references
+- standardized trust profiles such as AGG-TRUST-001
 
 ---
 
@@ -779,9 +786,377 @@ The following remain intentionally open for future profiles rather than this cor
 
 For any ADRS envelope `E`:
 
-1. Construct `unsigned_envelope = {prev, payload, pow}` using `null` when `pow` is absent.
-2. `msg_id = multihash(SHA-256, JCS(unsigned_envelope))`
-3. Construct `signing_object = {msg_id, prev, pow}` using the same normalized `pow` value.
+1. Construct `id_object = {payload, prev}`.
+2. `msg_id = multihash(SHA-256, JCS(id_object))`
+3. Construct `signing_object = {msg_id, pow}` using `null` when `pow` is absent.
 4. `sig = Ed25519.Sign(private_key(agent_id), JCS(signing_object))`
 
+This separates message identity from proof-of-work and avoids recursive hashing.
+
+Field order shown above is illustrative only; RFC 8785 JCS determines the canonical byte sequence.
+
 Verification repeats the same steps and verifies against the public key encoded by `payload.agent_id`.
+
+
+
+## Appendix B: Core Interoperability Test Vectors
+
+This appendix provides deterministic interoperability vectors for independent implementations. Unless otherwise noted, all JSON is canonicalized with RFC 8785 JCS, all multihashes use SHA-256, and all base64url is unpadded.
+
+The vectors in this appendix are normative for conformance testing of:
+
+- `msg_id` derivation
+- `sig` derivation
+- `prev` handling
+- PoW verification inputs
+- Merkle tree construction
+- announcements digest construction
+
+### B.1 Common Key Material
+
+**Ed25519 private key seed (hex):**
+
+```text
+000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+```
+
+**Ed25519 public key (hex):**
+
+```text
+03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8
+```
+
+**Derived `agent_id` (Bech32m over raw public-key bytes, HRP `adrs`):**
+
+```text
+adrs1qwss00lnecgtu8tsm5vwwj7qn9n7f43snwjs6hcamjrxgyj4xxuqa90ukn
+```
+
+### B.2 Envelope Signing Vector (`pow: null`, `prev: null`)
+
+**Payload object:**
+
+```json
+{
+  "agent_id": "adrs1qwss00lnecgtu8tsm5vwwj7qn9n7f43snwjs6hcamjrxgyj4xxuqa90ukn",
+  "protocol": "adrs/v1",
+  "receipt_msg_id": "uEiD-pTlqf0MlxAixtlszpNd7pUhs66lBgE2IiahUbPurlg",
+  "timestamp": "2026-03-10T12:00:00Z",
+  "type": "countersignature"
+}
+```
+
+**Canonical `id_object`:**
+
+```json
+{
+  "payload": {
+    "agent_id": "adrs1qwss00lnecgtu8tsm5vwwj7qn9n7f43snwjs6hcamjrxgyj4xxuqa90ukn",
+    "protocol": "adrs/v1",
+    "receipt_msg_id": "uEiD-pTlqf0MlxAixtlszpNd7pUhs66lBgE2IiahUbPurlg",
+    "timestamp": "2026-03-10T12:00:00Z",
+    "type": "countersignature"
+  },
+  "prev": null
+}
+```
+
+**JCS(`id_object`) UTF-8 bytes as text:**
+
+```text
+{"payload":{"agent_id":"adrs1qwss00lnecgtu8tsm5vwwj7qn9n7f43snwjs6hcamjrxgyj4xxuqa90ukn","protocol":"adrs/v1","receipt_msg_id":"uEiD-pTlqf0MlxAixtlszpNd7pUhs66lBgE2IiahUbPurlg","timestamp":"2026-03-10T12:00:00Z","type":"countersignature"},"prev":null}
+```
+
+**`msg_id` raw multihash bytes (hex):**
+
+```text
+12201994df4d48699989daf9c156f4e73e7fae47a5fea7e8cc9a392ee8ea0e637516
+```
+
+**`msg_id` JSON encoding:**
+
+```text
+uEiAZlN9NSGmZidr5wVb05z5_rkel_qfozJo5LujqDmN1Fg
+```
+
+**Canonical `signing_object`:**
+
+```json
+{
+  "msg_id": "uEiAZlN9NSGmZidr5wVb05z5_rkel_qfozJo5LujqDmN1Fg",
+  "pow": null
+}
+```
+
+**JCS(`signing_object`) UTF-8 bytes as text:**
+
+```text
+{"msg_id":"uEiAZlN9NSGmZidr5wVb05z5_rkel_qfozJo5LujqDmN1Fg","pow":null}
+```
+
+**Ed25519 signature raw bytes (hex):**
+
+```text
+c4a737e9dea7b7ff97e60f69a1720162c823398d4187aeb98203968864ac3415c3695e45ede70dc6bf84274a9a0a2ce01e63d288a21b11b80179d1980e090b0d
+```
+
+**Ed25519 signature base64url (unpadded):**
+
+```text
+xKc36d6nt_-X5g9poXIBYsgjOY1Bh665ggOWiGSsNBXDaV5F7ecNxr-EJ0qaCizgHmPSiKIbEbgBedGYDgkLDQ
+```
+
+### B.3 Envelope Signing Vector (`prev` non-null)
+
+**Payload object:**
+
+```json
+{
+  "agent_id": "adrs1qwss00lnecgtu8tsm5vwwj7qn9n7f43snwjs6hcamjrxgyj4xxuqa90ukn",
+  "protocol": "adrs/v1",
+  "receipt_msg_id": "uEiAZlN9NSGmZidr5wVb05z5_rkel_qfozJo5LujqDmN1Fg",
+  "response": "Refund issued",
+  "timestamp": "2026-03-10T12:10:00Z",
+  "type": "receipt-response"
+}
+```
+
+**`prev`:**
+
+```text
+uEiAZlN9NSGmZidr5wVb05z5_rkel_qfozJo5LujqDmN1Fg
+```
+
+**JCS(`id_object`) UTF-8 bytes as text:**
+
+```text
+{"payload":{"agent_id":"adrs1qwss00lnecgtu8tsm5vwwj7qn9n7f43snwjs6hcamjrxgyj4xxuqa90ukn","protocol":"adrs/v1","receipt_msg_id":"uEiAZlN9NSGmZidr5wVb05z5_rkel_qfozJo5LujqDmN1Fg","response":"Refund issued","timestamp":"2026-03-10T12:10:00Z","type":"receipt-response"},"prev":"uEiAZlN9NSGmZidr5wVb05z5_rkel_qfozJo5LujqDmN1Fg"}
+```
+
+**`msg_id` raw multihash bytes (hex):**
+
+```text
+1220320723e7669d551bfa17a12d676d63b4a1199c3e34b75152d32645fb26032a1f
+```
+
+**`msg_id` JSON encoding:**
+
+```text
+uEiAyByPnZp1VG_oXoS1nbWO0oRmcPjS3UVLTJkX7JgMqHw
+```
+
+**JCS(`signing_object`) UTF-8 bytes as text:**
+
+```text
+{"msg_id":"uEiAyByPnZp1VG_oXoS1nbWO0oRmcPjS3UVLTJkX7JgMqHw","pow":null}
+```
+
+**Ed25519 signature raw bytes (hex):**
+
+```text
+5e681e28c49bd5c78660e92e70511833628b952ec6d38d136afed6010128444b83746b145961323df438d1c9aa0b7501e20d2b89cde324599b27807647f6fd05
+```
+
+**Ed25519 signature base64url (unpadded):**
+
+```text
+XmgeKMSb1ceGYOkucFEYM2KLlS7G040Tav7WAQEoREuDdGsUWWEyPfQ40cmqC3UB4g0ric3jJFmbJ4B2R_b9BQ
+```
+
+### B.4 Envelope Signing Vector (populated `pow`)
+
+**Payload object:**
+
+```json
+{
+  "agent_id": "adrs1qwss00lnecgtu8tsm5vwwj7qn9n7f43snwjs6hcamjrxgyj4xxuqa90ukn",
+  "capabilities": [
+    {
+      "description": "Echo input text",
+      "domain": "utility.echo",
+      "id": "cap_echo_v1",
+      "protocols": {
+        "mcp": {
+          "endpoint": "https://echo.agent/mcp",
+          "version": "2026-03-01"
+        }
+      },
+      "tags": ["echo"]
+    }
+  ],
+  "protocol": "adrs/v1",
+  "timestamp": "2026-03-10T12:20:00Z",
+  "ttl": 3600,
+  "type": "capability-announcement"
+}
+```
+
+**JCS(`id_object`) UTF-8 bytes as text:**
+
+```text
+{"payload":{"agent_id":"adrs1qwss00lnecgtu8tsm5vwwj7qn9n7f43snwjs6hcamjrxgyj4xxuqa90ukn","capabilities":[{"description":"Echo input text","domain":"utility.echo","id":"cap_echo_v1","protocols":{"mcp":{"endpoint":"https://echo.agent/mcp","version":"2026-03-01"}},"tags":["echo"]}],"protocol":"adrs/v1","timestamp":"2026-03-10T12:20:00Z","ttl":3600,"type":"capability-announcement"},"prev":null}
+```
+
+**`msg_id` raw multihash bytes (hex):**
+
+```text
+12209f6f439395cae1712e6bd6178bea26e6b55b6b38bfdc7c0cfcc67a57b78e7413
+```
+
+**`msg_id` JSON encoding:**
+
+```text
+uEiCfb0OTlcrhcS5r1heL6ibmtVtrOL_cfAz8xnpXt450Ew
+```
+
+**PoW object:**
+
+```json
+{
+  "algorithm": "sha256",
+  "difficulty": 12,
+  "hash": "uEiAACzshdE5fkPFdhadoRMHNKFbKWN_sAQSK3OdD9OF9QA",
+  "nonce": "1b24"
+}
+```
+
+**PoW verification digest input (`msg_id_raw_bytes || nonce_bytes`) as hex:**
+
+```text
+12209f6f439395cae1712e6bd6178bea26e6b55b6b38bfdc7c0cfcc67a57b78e74131b24
+```
+
+**PoW digest `SHA-256(msg_id_raw_bytes || nonce_bytes)` (hex):**
+
+```text
+000b3b21744e5f90f15d85a76844c1cd2856ca58dfec01048adce743f4e17d40
+```
+
+**JCS(`signing_object`) UTF-8 bytes as text:**
+
+```text
+{"msg_id":"uEiCfb0OTlcrhcS5r1heL6ibmtVtrOL_cfAz8xnpXt450Ew","pow":{"algorithm":"sha256","difficulty":12,"hash":"uEiAACzshdE5fkPFdhadoRMHNKFbKWN_sAQSK3OdD9OF9QA","nonce":"1b24"}}
+```
+
+**Ed25519 signature raw bytes (hex):**
+
+```text
+e9ad673fdbf1cdf54bb58a00184f49dfe9617446b235e3d8a701a72cb358b1fdf4c31bec837ea1a195af64c7a3e162a2320c805cff49af48a55c0d5b81c4d00e
+```
+
+**Ed25519 signature base64url (unpadded):**
+
+```text
+6a1nP9vxzfVLtYoAGE9J3-lhdEayNePYpwGnLLNYsf30wxvsg36hoZWvZMej4WKiMgyAXP9Jr0ilXA1bgcTQDg
+```
+
+### B.5 Merkle Root Vector
+
+This vector uses the three message IDs from sections B.2, B.3, and B.4.
+
+**Sorted `msg_id_raw_bytes` inputs (hex):**
+
+```text
+12201994df4d48699989daf9c156f4e73e7fae47a5fea7e8cc9a392ee8ea0e637516
+1220320723e7669d551bfa17a12d676d63b4a1199c3e34b75152d32645fb26032a1f
+12209f6f439395cae1712e6bd6178bea26e6b55b6b38bfdc7c0cfcc67a57b78e7413
+```
+
+**Leaf hashes `SHA-256(0x00 || msg_id_raw_bytes)` (hex):**
+
+```text
+d939accef14df3d93eacd2cf6ef1fd45716c429dc80e64418dec1c49948e3faa
+c44698bbe81c6dca760897947fb536a1b3c237fdf09d57f78bc7f500a7343991
+61c4da137d39d5d19889d8d704dd46651a9388e0d8c41a7152e51708becdbbf6
+```
+
+**Level 1 inner hash `SHA-256(0x01 || leaf1 || leaf2)` (hex):**
+
+```text
+e5541b6d117114d31413c96ee758eafadeeea91a56a2c683d3540697d919bf11
+```
+
+**Promoted odd leaf (hex):**
+
+```text
+61c4da137d39d5d19889d8d704dd46651a9388e0d8c41a7152e51708becdbbf6
+```
+
+**Merkle root digest (hex):**
+
+```text
+42ac8a069f488e57e5a76e2f16774222695e5cb26058cbfaae0731a6fedab7fa
+```
+
+**Merkle root multihash JSON encoding:**
+
+```text
+uEiBCrIoGn0iOV-Wnbi8Wd0IiaV5csmBYy_quBzGm_tq3-g
+```
+
+### B.6 Announcements Digest Vector
+
+This vector uses two capability-announcement message IDs: the B.4 message ID and the additional announcement below.
+
+**Additional announcement payload:**
+
+```json
+{
+  "agent_id": "adrs1qwss00lnecgtu8tsm5vwwj7qn9n7f43snwjs6hcamjrxgyj4xxuqa90ukn",
+  "capabilities": [
+    {
+      "description": "Uppercase text",
+      "domain": "utility.text-transform",
+      "id": "cap_upper_v1",
+      "protocols": {
+        "mcp": {
+          "endpoint": "https://echo.agent/mcp",
+          "version": "2026-03-01"
+        }
+      },
+      "tags": ["uppercase", "text"]
+    }
+  ],
+  "protocol": "adrs/v1",
+  "timestamp": "2026-03-10T12:25:00Z",
+  "ttl": 3600,
+  "type": "capability-announcement"
+}
+```
+
+**Additional announcement `msg_id_raw_bytes` (hex):**
+
+```text
+1220efb306df1d99588887d9a208d1601a2f512f0f3649b0e66628e05d5af15a28db
+```
+
+**Additional announcement `msg_id` JSON encoding:**
+
+```text
+uEiDvswbfHZlYiIfZogjRYBovUS8PNkmw5mYo4F1a8Voo2w
+```
+
+**Sorted announcement `msg_id_raw_bytes` inputs (hex):**
+
+```text
+12209f6f439395cae1712e6bd6178bea26e6b55b6b38bfdc7c0cfcc67a57b78e7413
+1220efb306df1d99588887d9a208d1601a2f512f0f3649b0e66628e05d5af15a28db
+```
+
+**Concatenated sorted bytes (hex):**
+
+```text
+12209f6f439395cae1712e6bd6178bea26e6b55b6b38bfdc7c0cfcc67a57b78e74131220efb306df1d99588887d9a208d1601a2f512f0f3649b0e66628e05d5af15a28db
+```
+
+**Announcements digest raw multihash bytes (hex):**
+
+```text
+1220b15fb9ea39ea0ec75b13027e9365f354e5dcd8592bab5c93fb36c990e3c3b57d
+```
+
+**Announcements digest JSON encoding:**
+
+```text
+uEiCxX7nqOeoOx1sTAn6TZfNU5dzYWSurXJP7NsmQ48O1fQ
+```

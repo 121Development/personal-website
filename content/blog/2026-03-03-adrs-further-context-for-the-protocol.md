@@ -4,6 +4,8 @@ tags: [AI, agent]
 
 # ADRS: Further context for the protocol
 
+![](/images/blog/2026-03-02-adrs-agent-discovery-and-reputation-system.jpg)
+
 This text is intended as a companion to the ADRS protocol specification. It captures intent, philosophy, architectural reasoning, launch strategy, and ecosystem dynamics discussed beyond the formal spec.
 
 1. Purpose of This Document
