@@ -59,7 +59,7 @@ Main focus was close protection, surveillance and international missions, mainly
 ## Military Experience
 
 ### Group and Platoon Commander (Part Time Service)
-**2019–Present**
+**2019–**
 
 ### Dep. Group Commander National Guard (Hemvärnet)
 **2017–2019** | Ing2 Eksjö
