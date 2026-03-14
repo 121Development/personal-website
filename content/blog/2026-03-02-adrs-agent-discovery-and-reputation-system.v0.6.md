@@ -1,5 +1,6 @@
 ---
 tags: [AI, agent]
+featured: true
 ---
 
 # ADRS: Agent Discovery and Reputation System
